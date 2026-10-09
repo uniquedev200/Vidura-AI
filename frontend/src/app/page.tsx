@@ -11,7 +11,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col justify-between selection:bg-amber-500/30 selection:text-amber-200">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#08090C]/80 border-b border-white/5 px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#08090C]/60 border-b border-white/10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto h-20 flex items-center justify-between">
           {/* Logo & Brand */}
           <Link href="/" className="flex items-center gap-3 group">
@@ -73,7 +73,7 @@ export default function HomePage() {
       </div>
 
       {/* Enterprise Footer */}
-      <footer className="border-t border-white/10 bg-[#08090C]/90 py-16 px-4 sm:px-6 lg:px-8 mt-20">
+      <footer className="border-t border-white/10 bg-[#08090C]/70 py-16 px-4 sm:px-6 lg:px-8 mt-20">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-xs font-mono text-slate-500">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">

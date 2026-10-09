@@ -79,8 +79,8 @@ class GroqService:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                temperature=0.3,
-                max_tokens=4096,  # Generous headroom for full four pillars
+                temperature=0.25,
+                max_tokens=2500,  # Calibrated for high-density, concise Four Pillars
                 stream=True
             )
         except Exception as e:
@@ -92,8 +92,8 @@ class GroqService:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                temperature=0.3,
-                max_tokens=4096,
+                temperature=0.25,
+                max_tokens=2500,
                 stream=True
             )
 
@@ -141,8 +141,8 @@ class GroqService:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                temperature=0.3,
-                max_tokens=4096
+                temperature=0.25,
+                max_tokens=2500
             )
         except Exception as e:
             logger.warning(f"Primary model {selected_model} failed: {e}. Using fallback...")
@@ -153,8 +153,8 @@ class GroqService:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                temperature=0.3,
-                max_tokens=4096
+                temperature=0.25,
+                max_tokens=2500
             )
 
         latency_ms = int((time.time() - start_time) * 1000)

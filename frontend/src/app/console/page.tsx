@@ -8,7 +8,7 @@ export default function ConsolePage() {
   return (
     <main className="min-h-screen flex flex-col justify-between selection:bg-amber-500/30 selection:text-amber-200">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#08090C]/85 border-b border-amber-500/15 px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#08090C]/65 border-b border-amber-500/15 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto h-20 flex items-center justify-between">
           {/* Back to Home & Brand */}
           <div className="flex items-center gap-4">
@@ -57,7 +57,7 @@ export default function ConsolePage() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 bg-[#08090C]/90 py-6 px-4 text-center text-xs font-mono text-slate-500">
+      <footer className="border-t border-white/5 bg-[#08090C]/70 py-6 px-4 text-center text-xs font-mono text-slate-500">
         Vidura-AI &bull; Enterprise Moral Governance Engine &bull; All Sessions Cryptographically Grounded
       </footer>
     </main>

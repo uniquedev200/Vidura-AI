@@ -33,16 +33,16 @@ export default function RootLayout({
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
           {/* Base Background Image */}
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 scale-105"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700 scale-100"
             style={{
-              backgroundImage: "url('/assets/bg.png')",
-              filter: "brightness(0.65) contrast(1.15)",
+              backgroundImage: "url('/assets/bg.webp'), url('/assets/bg.png')",
+              filter: "brightness(0.92) contrast(1.12)",
             }}
           />
-          {/* Dark Architectural Cyber-Sabhā Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-slate-950/85 to-black/95 backdrop-blur-[2px]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-black/60 pointer-events-none" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-cyan-900/10 via-transparent to-transparent pointer-events-none" />
+          {/* Subtle Atmospheric Cyber-Sabhā Overlays (maintains contrast while keeping sabhā pillars clearly visible) */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-[#08090C]/60 to-[#08090C]/80" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/15 via-transparent to-black/35 pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-cyan-900/15 via-transparent to-transparent pointer-events-none" />
         </div>
 
         {/* Dynamic Foreground App Content */}
