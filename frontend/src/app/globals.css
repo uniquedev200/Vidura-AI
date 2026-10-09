@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-obsidian: #08090C;
+    --bg-slate-void: #0F1117;
+    --bg-dark-indigo: #141624;
+    --gold-burnished: #D4AF37;
+    --gold-accent: #F59E0B;
+    --amber-mystic: #D97706;
+    --cyan-ethereal: #06B6D4;
+    --teal-ethereal: #14B8A6;
+  }
+
+  body {
+    background-color: #08090C;
+    color: #F3F4F6;
+    overflow-x: hidden;
+  }
+}
+
+/* Glassmorphism & Neumorphism styles */
+.glass-panel {
+  background: rgba(15, 17, 23, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(212, 175, 55, 0.12);
+}
+
+.glass-panel-subtle {
+  background: rgba(15, 17, 23, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.35);
+}
+
+.glass-panel-gold {
+  background: radial-gradient(circle at top left, rgba(212, 175, 55, 0.08), rgba(15, 17, 23, 0.85));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  box-shadow: 0 10px 40px -10px rgba(212, 175, 55, 0.18), inset 0 1px 2px 0 rgba(212, 175, 55, 0.25);
+}
+
+.glass-panel-cyan {
+  background: radial-gradient(circle at top right, rgba(6, 182, 212, 0.08), rgba(15, 17, 23, 0.85));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  box-shadow: 0 10px 40px -10px rgba(6, 182, 212, 0.15), inset 0 1px 2px 0 rgba(6, 182, 212, 0.2);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #FFFBEB 0%, #F59E0B 50%, #D4AF37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cyan-gradient-text {
+  background: linear-gradient(135deg, #ECFEFF 0%, #06B6D4 50%, #14B8A6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(8, 9, 12, 0.8);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.5);
+}
