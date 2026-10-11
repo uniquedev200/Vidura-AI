@@ -1,21 +1,29 @@
 import type { Metadata } from "next";
-import { Inter, Cinzel } from "next/font/google";
+import { Plus_Jakarta_Sans, Cinzel, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const jakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const cinzel = Cinzel({
   variable: "--font-serif",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "Vidura-AI | Enterprise Moral Governance & Strategic Dissent",
+  title: "Vidura-AI | Archival Statecraft & Engineering Ethics Governance",
   description:
-    "Enterprise decision-support engine bridging 3,000-year-old game-theoretic statecraft (Vidura Nīti) with modern engineering compliance standards (ACM & IEEE Codes of Ethics).",
+    "Decision-support engine grounding engineering compliance dilemmas in the BORI Critical Edition of Vidura Nīti (Udyoga Parva, Chapters 33-40) and ACM/IEEE Codes of Ethics.",
   icons: {
     icon: "/favicon.ico",
   },
@@ -27,25 +35,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${cinzel.variable} dark h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans bg-[#08090C] text-slate-100 selection:bg-amber-500/30 selection:text-amber-200">
-        {/* Layered Fixed Full-Screen Background */}
+    <html
+      lang="en"
+      className={`${jakarta.variable} ${cinzel.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col font-sans bg-[#08090C] text-[#F3F4F6] selection:bg-amber-500/30 selection:text-amber-100">
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          {/* Base Background Image */}
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700 scale-100"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
               backgroundImage: "url('/assets/bg.webp'), url('/assets/bg.png')",
-              filter: "brightness(0.92) contrast(1.12)",
+              filter: "brightness(0.85) contrast(1.08)",
             }}
           />
-          {/* Subtle Atmospheric Cyber-Sabhā Overlays (maintains contrast while keeping sabhā pillars clearly visible) */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-[#08090C]/60 to-[#08090C]/80" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/15 via-transparent to-black/35 pointer-events-none" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-cyan-900/15 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#08090C]/70 via-[#08090C]/78 to-[#08090C]/92" />
         </div>
 
-        {/* Dynamic Foreground App Content */}
         <div className="relative z-10 flex-1 flex flex-col">
           {children}
         </div>

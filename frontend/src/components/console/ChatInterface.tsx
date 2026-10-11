@@ -6,25 +6,21 @@ import confetti from "canvas-confetti";
 import {
   Compass,
   Zap,
-  Shield,
   Layers,
-  Database,
-  ArrowRight,
   Send,
   BookOpen,
   Check,
   Star,
   Copy,
-  Terminal,
   Scale,
-  Scroll,
-  AlertTriangle,
   User,
   Users,
   Lock,
   Download,
   LayoutGrid,
   FileText,
+  AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 import DharmaChakra from "@/components/ui/DharmaChakra";
 import DharmaScale from "@/components/ui/DharmaScale";
@@ -46,44 +42,55 @@ interface Preset {
   risk_level: string;
   primary_fear: string;
   dilemma: string;
+  target_shloka: string;
+  target_folio: number;
 }
 
 const PRESETS: Preset[] = [
   {
     id: "preset-bias-coverup",
     title: "Algorithmic Bias Coverup",
-    category: "AI & Disparate Impact",
+    category: "AI & Disparate Impact • ACM 1.4",
     role: "Machine Learning Engineer",
     counterparty: "VP of AI Product & Chief Revenue Officer",
-    organizational_pressure: "Quarterly Wall Street guidance depends on immediate rollout",
+    organizational_pressure:
+      "Quarterly Wall Street guidance depends on immediate rollout",
     risk_level: "Critical",
     primary_fear: "Constructive termination, bonus forfeiture, NDA threat",
     dilemma:
       "Our credit evaluation model exhibits a 34% higher rejection rate for underrepresented minority applicants when features correlate with zip codes. Management ordered me to suppress the disparate-impact audit report and deploy tomorrow morning to satisfy investor milestones.",
+    target_shloka: "33.16",
+    target_folio: 111,
   },
   {
     id: "preset-security-bypass",
     title: "Bypassing Security for Deadlines",
-    category: "Infrastructure & Public Safety",
+    category: "Infrastructure & Safety • IEEE 1.1",
     role: "Lead Site Reliability Engineer",
     counterparty: "Director of Engineering & Product Lead",
-    organizational_pressure: "Critical contract termination if release is delayed 48 hours",
+    organizational_pressure:
+      "Critical contract termination if release is delayed 48 hours",
     risk_level: "High",
     primary_fear: "Blamed for missed company SLA and team restructuring",
     dilemma:
       "A critical remote-code-execution zero-day vulnerability in our auth gateway was flagged in pre-release staging. The engineering director asked me to disable the automated vulnerability gate in CI/CD pipeline so the client release completes on time, promising a patch next sprint.",
+    target_shloka: "33.17",
+    target_folio: 121,
   },
   {
     id: "preset-executive-nepotism",
     title: "Executive Nepotism & Whistleblowing",
-    category: "Corporate Governance & Fraud",
+    category: "Fiduciary Governance • ACM 1.3",
     role: "Principal Cloud Architect",
     counterparty: "Chief Technology Officer & Audit Committee",
-    organizational_pressure: "Direct executive intimidation from founders' inner circle",
+    organizational_pressure:
+      "Direct executive intimidation from founders' inner circle",
     risk_level: "Critical",
     primary_fear: "Retaliation, defamation, and industry blacklisting",
     dilemma:
       "I discovered that our CTO awarded an uncompetitive $4.2M cloud infrastructure tooling vendor contract to a shell LLC owned by his sibling, with no functional technical deliverables. When I requested architecture diagrams, I was told to 'stay in my lane or look for another job.'",
+    target_shloka: "34.29",
+    target_folio: 91,
   },
 ];
 
@@ -95,18 +102,28 @@ interface ParsedFourPillars {
 }
 
 export default function ChatInterface() {
-  // Input Form States
   const [dilemma, setDilemma] = useState<string>("");
   const [role, setRole] = useState<string>("Machine Learning Engineer");
-  const [counterparty, setCounterparty] = useState<string>("VP of AI Product & Chief Revenue Officer");
-  const [organizationalPressure, setOrganizationalPressure] = useState<string>("Quarterly Wall Street guidance depends on immediate rollout");
+  const [counterparty, setCounterparty] = useState<string>(
+    "VP of AI Product & Chief Revenue Officer"
+  );
+  const [organizationalPressure, setOrganizationalPressure] = useState<string>(
+    "Quarterly Wall Street guidance depends on immediate rollout"
+  );
   const [riskLevel, setRiskLevel] = useState<string>("Critical");
-  const [primaryFear, setPrimaryFear] = useState<string>("Constructive termination, bonus forfeiture, NDA threat");
+  const [primaryFear, setPrimaryFear] = useState<string>(
+    "Constructive termination, bonus forfeiture, NDA threat"
+  );
 
-  // Counsel States
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [apiNotice, setApiNotice] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
-  const [pillars, setPillars] = useState<ParsedFourPillars>({ p1: "", p2: "", p3: "", p4: "" });
+  const [pillars, setPillars] = useState<ParsedFourPillars>({
+    p1: "",
+    p2: "",
+    p3: "",
+    p4: "",
+  });
   const [viewMode, setViewMode] = useState<"scroll" | "grid">("scroll");
   const [retrievedVerses, setRetrievedVerses] = useState<any[]>([]);
   const [retrievedEthics, setRetrievedEthics] = useState<any[]>([]);
@@ -126,12 +143,10 @@ export default function ChatInterface() {
     }, 80);
   };
 
-  // Actions Feedback
   const [scriptCopied, setScriptCopied] = useState<boolean>(false);
   const [likertRating, setLikertRating] = useState<number>(5);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
 
-  // Client-side OCR-verified fallback matcher so every scenario/dilemma resolves its distinct Folio & Shloka immediately
   const inferCanonicalShlokaFromDilemma = (text: string) => {
     const low = (text || "").toLowerCase();
     if (
@@ -174,11 +189,15 @@ export default function ChatInterface() {
         text_sanskrit_translit:
           "A-pṛṣṭo 'py atra brūyān na tu paśyed vi-nāśanam | An-arthakam api brūyāt sarva-bhūtāhite ratam ||",
         text_english:
-          "Vidura said,—Even if unasked, one should speak truly, whether his words be good or bad, hateful or pleasing, unto him whose defeat one doth not wish. I shall, therefore, say, O king, what is for the good of the Kurus. I shall say what is both beneficial and consistent with morality. Listen to me! Do not, O king, set thy heart upon means of success that are unjust and improper.",
+          "Vidura said: Even if unasked, one should speak truly, whether his words be good or bad, hateful or pleasing, unto him whose defeat one doth not wish. I shall, therefore, say, O king, what is for the good of the Kurus. I shall say what is both beneficial and consistent with morality. Listen to me! Do not, O king, set thy heart upon means of success that are unjust and improper.",
         score: 0.951,
       };
     }
-    if (low.includes("secret") || low.includes("paper trail") || low.includes("encrypted")) {
+    if (
+      low.includes("secret") ||
+      low.includes("paper trail") ||
+      low.includes("encrypted")
+    ) {
       return {
         id: "vidura-ch33-v32",
         verse_id: "33.32",
@@ -208,7 +227,6 @@ export default function ChatInterface() {
     };
   };
 
-  // Resolved Archival Codex coordinates for Pillar II (Pramāṇa)
   const inferredVerse = inferCanonicalShlokaFromDilemma(dilemma);
   const primaryVerse = retrievedVerses?.[0] || inferredVerse;
   const sourceFolio = {
@@ -242,14 +260,19 @@ export default function ChatInterface() {
   };
 
   const parsePillars = (text: string) => {
-    const normalized = text.replace(/[\u202f\u00a0]/g, " ").replace(/[\u2011\u2013]/g, "-");
+    const normalized = text
+      .replace(/[\u202f\u00a0]/g, " ")
+      .replace(/[\u2011\u2013]/g, "-");
 
     const i1 = normalized.search(/(PILLAR\s*I\b|#+\s*I[\.\s])/i);
     const i2 = normalized.search(/(PILLAR\s*II\b|#+\s*II[\.\s])/i);
     const i3 = normalized.search(/(PILLAR\s*III\b|#+\s*III[\.\s])/i);
     const i4 = normalized.search(/(PILLAR\s*IV\b|#+\s*IV[\.\s])/i);
 
-    let p1 = "", p2 = "", p3 = "", p4 = "";
+    let p1 = "",
+      p2 = "",
+      p3 = "",
+      p4 = "";
 
     if (i1 !== -1) {
       if (i2 !== -1) {
@@ -286,17 +309,21 @@ export default function ChatInterface() {
     setPillars({ p1, p2, p3, p4 });
   };
 
-  const handleSubmitDilemma = async (e?: React.FormEvent) => {
+  const handleSubmitDilemma = async (
+    e?: React.FormEvent,
+    overrideDilemma?: string
+  ) => {
     if (e) e.preventDefault();
-    if (!dilemma.trim() || isLoading) return;
+    const activeDilemmaText = (overrideDilemma ?? dilemma).trim();
+    if (!activeDilemmaText || isLoading) return;
 
-    const initialMatched = inferCanonicalShlokaFromDilemma(dilemma);
+    const initialMatched = inferCanonicalShlokaFromDilemma(activeDilemmaText);
     setRetrievedVerses([initialMatched]);
     setIsLoading(true);
+    setApiNotice(null);
     setRawText("");
     setPillars({ p1: "", p2: "", p3: "", p4: "" });
     setFeedbackSubmitted(false);
-    // Automatically open the 3D Ancient Manuscript Book and trigger flip-to-shloka animation
     setIsBookOpen(true);
     setCodexSeekKey((k) => k + 1);
 
@@ -308,7 +335,7 @@ export default function ChatInterface() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          dilemma,
+          dilemma: activeDilemmaText,
           role,
           counterparty,
           organizational_pressure: organizationalPressure,
@@ -351,19 +378,23 @@ export default function ChatInterface() {
                 setRawText(accumulated);
                 parsePillars(accumulated);
               } else if (parsed.type === "done") {
-                setLatencyMs(parsed.latency_ms || Math.round(performance.now() - startTime));
+                setLatencyMs(
+                  parsed.latency_ms ||
+                    Math.round(performance.now() - startTime)
+                );
               }
             } catch {
-              // Ignore partial parsing errors
+              // Ignore partial chunk JSON boundary
             }
           }
         }
       }
-    } catch (err) {
-      console.error("Inference Error:", err);
-      const activeShloka = inferCanonicalShlokaFromDilemma(dilemma);
+    } catch {
+      setApiNotice(
+        "Live FastAPI stream unreachable; rendered deterministic archival synthesis from local BORI & ACM/IEEE registry."
+      );
+      const activeShloka = inferCanonicalShlokaFromDilemma(activeDilemmaText);
       const [chNum, vNum] = activeShloka.verse_id.split(".");
-      // Canonical fallback matching exact template and active scenario's verified shloka
       const fallback = `You bring a conflict between personal survival and fiduciary duty. Let us examine what is transient and what is permanent.
 
 ---
@@ -450,7 +481,7 @@ Store these in a sealed, time-stamped external repository before initiating any 
 
 | **Maneuver** | **Verbatim Lines** |
 |---|---|
-| **Sāma (conciliatory)** | “I appreciate the pressure to meet the Wall-Street guidance; the product vision you have articulated is compelling and aligns with our growth targets.” |
+| **Sāma (conciliatory)** | “I appreciate the pressure to meet the Wall-Street guidance; the product vision you have articulated is compelling and aligns our growth targets.” |
 | **Dāna (offering alignment)** | “If we integrate a fairness post-processor now, we can still ship on schedule while shielding the company from potential regulatory fines estimated at $2-3 M under the ECOA and Fair Credit Reporting Act.” |
 | **Bheda (exposing risk)** | “Our current audit shows a 34% higher rejection rate for minority applicants. Regulators have recently levied penalties on firms that concealed similar bias; the risk of a class-action suit would far outweigh the quarterly earnings uplift.” |
 | **Daṇḍa (legal boundary)** | “The IEEE Code of Ethics (cl. 3.2) and ACM Code (cl. 1.4) obligate us to prevent discriminatory outcomes. Proceeding without remediation could be construed as willful non-compliance, exposing both the organization and its leadership to civil and criminal liability.” |
@@ -514,10 +545,10 @@ Machine Learning Engineer
     setScriptCopied(true);
     try {
       confetti({
-        particleCount: 45,
-        spread: 60,
+        particleCount: 35,
+        spread: 55,
         origin: { y: 0.8 },
-        colors: ["#D4AF37", "#06B6D4", "#F59E0B"],
+        colors: ["#D4AF37", "#F59E0B"],
       });
     } catch {}
     setTimeout(() => setScriptCopied(false), 2500);
@@ -563,73 +594,82 @@ Machine Learning Engineer
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-      {/* High-Council Header Status Bar */}
-      <div className="glass-panel-gold rounded-2xl p-4 sm:p-5 border-amber-500/25 flex flex-wrap items-center justify-between gap-4">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Council Telemetry Header Bar */}
+      <div className="rounded-lg bg-[#0F1117] border border-[#262A36] p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+          <div className="w-10 h-10 rounded-md bg-[#050608] border border-amber-500/35 flex items-center justify-center text-amber-400">
             <Compass className="w-5 h-5" />
           </div>
           <div>
             <div className="text-xs font-mono uppercase tracking-widest text-amber-400 font-bold flex items-center gap-2">
               <span>Indic Cyber-Sabhā</span>
               <span>&bull;</span>
-              <span className="text-slate-400">Prajāgara Nocturnal Chamber</span>
+              <span className="text-slate-300">Prajāgara Nocturnal Chamber</span>
             </div>
-            <div className="font-serif text-base sm:text-lg font-bold text-white tracking-tight">
+            <div className="font-serif text-base sm:text-lg font-bold text-[#F3F4F6] tracking-tight">
               Vidura Strategic Governance &bull; Four Pillars of Counsel
             </div>
           </div>
         </div>
 
-        {/* Dynamic Dharma Balance Scale and Telemetry */}
+        {/* Dynamic Dharma Balance Scale and Primary Controls */}
         <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-900/80 border border-amber-500/20 text-amber-300">
+          <div className="flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-md bg-[#050608] border border-[#262A36] text-amber-300">
             <DharmaScale riskLevel={riskLevel} className="w-6 h-6" />
-            <span>Risk Balance: <strong className="text-white uppercase">{riskLevel}</strong></span>
+            <span>
+              Risk Asymmetry:{" "}
+              <strong className="text-[#F3F4F6] uppercase">{riskLevel}</strong>
+            </span>
           </div>
 
-          <div className="px-3.5 py-1.5 rounded-xl bg-amber-400/10 border border-amber-500/25 text-amber-300 flex items-center gap-1.5">
+          <div className="min-h-[44px] px-3.5 py-2 rounded-md bg-[#050608] border border-[#262A36] text-amber-300 flex items-center gap-1.5">
             <Zap className="w-3.5 h-3.5 text-amber-400" />
-            <span>{latencyMs}ms Inference</span>
+            <span>{latencyMs}ms Telemetry</span>
           </div>
 
           <button
+            type="button"
             onClick={handleOpenAndFlipBook}
-            className="flex items-center space-x-2 rounded-xl border border-amber-500/50 bg-gradient-to-r from-amber-950/60 to-amber-900/30 px-3.5 py-1.5 text-xs font-serif uppercase tracking-wider text-amber-200 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 min-h-[44px] rounded-md border border-amber-500/45 bg-[#1A140B] hover:bg-[#241C0F] px-4 py-2 text-xs font-mono uppercase tracking-wider text-amber-200 hover:border-amber-400 transition-colors cursor-pointer"
           >
-            <span>§ Open Archival Codex (Folio {sourceFolio.page_number}) →</span>
+            <span>§ Inspect Codex (Folio {sourceFolio.page_number})</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setIsDrawerOpen(true)}
-            className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 min-h-[44px] px-4 py-2 rounded-md bg-[#050608] hover:bg-[#161922] text-slate-200 border border-[#262A36] transition-colors cursor-pointer"
           >
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span>Citations ({retrievedVerses.length + retrievedEthics.length || 3})</span>
+            <span>
+              Citations ({retrievedVerses.length + retrievedEthics.length || 3})
+            </span>
           </button>
         </div>
       </div>
 
-      {/* Royal Sūtra Layout: Petitioner's Seal Card */}
-      <div className="glass-panel rounded-3xl p-6 sm:p-8 border-amber-500/30 shadow-[inset_0_1px_2px_rgba(212,175,55,0.2),0_8px_32px_rgba(0,0,0,0.5)] space-y-6">
-        {/* Petitioner's Seal Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-amber-500/20">
+      {/* Petitioner's Seal & Dilemma Formulation Form */}
+      <form
+        onSubmit={(e) => handleSubmitDilemma(e)}
+        className="rounded-lg bg-[#0F1117] border border-[#262A36] p-6 sm:p-8 shadow-[0_8px_28px_rgba(0,0,0,0.45)] space-y-6"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-[#262A36]">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-mono text-xs font-bold">
+            <div className="w-7 h-7 rounded-sm bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400 font-mono text-xs font-bold">
               §
             </div>
             <div>
               <span className="font-serif text-sm uppercase tracking-widest text-amber-300 font-bold block">
-                Petitioner&apos;s Seal &bull; Formal Summons
+                Petitioner&apos;s Seal &bull; Formal Case Brief
               </span>
-              <span className="text-[11px] font-mono text-slate-400 block -mt-0.5">
-                Submit architectural coercion or compliance breach for Royal Strategic Deliberation
+              <span className="text-xs font-mono text-slate-300 block">
+                Specify organizational coercion parameters or select a verified precedent case below
               </span>
             </div>
           </div>
-          <span className="text-[11px] font-mono uppercase px-2.5 py-1 rounded bg-black/50 text-slate-400 border border-white/10">
-            Confidential Fiduciary Record
+          <span className="text-xs font-mono uppercase px-2.5 py-1 rounded-sm bg-[#050608] text-slate-300 border border-[#262A36]">
+            Fiduciary Deliberation Record
           </span>
         </div>
 
@@ -637,80 +677,108 @@ Machine Learning Engineer
         <div>
           <div className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold mb-2.5 flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5" />
-            Precedent Archives (Select Dilemma Template):
+            <span>Load Precedent Case Template:</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {PRESETS.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => handleSelectPreset(p)}
-                type="button"
-                className="p-3.5 rounded-xl bg-slate-950/70 hover:bg-slate-900 border border-amber-500/20 hover:border-amber-400/50 text-left transition-all cursor-pointer group"
-              >
-                <div className="text-xs font-semibold text-amber-200 group-hover:text-amber-300 font-serif">
-                  {p.title}
-                </div>
-                <div className="text-[11px] text-slate-400 font-mono mt-0.5 line-clamp-1">
-                  {p.category}
-                </div>
-              </button>
-            ))}
+            {PRESETS.map((p) => {
+              const isSelected = dilemma === p.dilemma;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => handleSelectPreset(p)}
+                  type="button"
+                  className={`min-h-[64px] p-4 rounded-md border text-left transition-colors cursor-pointer ${
+                    isSelected
+                      ? "bg-[#1A140B] border-amber-500/60"
+                      : "bg-[#050608] hover:bg-[#12151E] border-[#262A36] hover:border-amber-500/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-amber-200 font-serif">
+                      {p.title}
+                    </span>
+                    <span className="text-[11px] font-mono text-amber-400 shrink-0">
+                      § {p.target_shloka} (p.{p.target_folio})
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-400 font-mono mt-1">
+                    {p.category}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Multidimensional Parameters Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-4 border-t border-white/5">
+        {/* Multidimensional Parameters Grid with Explicit Label-Input Bindings */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-[#1E222D]">
           <div>
-            <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5">
+            <label
+              htmlFor="role-input"
+              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5"
+            >
               <User className="w-3.5 h-3.5 text-amber-400" />
-              Petitioner Role
+              <span>Petitioner Role</span>
             </label>
             <input
+              id="role-input"
               type="text"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white text-xs sm:text-sm font-sans focus:outline-none focus:border-amber-400"
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-xs sm:text-sm font-sans focus:border-amber-400"
               placeholder="e.g. Machine Learning Engineer"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-cyan-400" />
-              Sovereign Counterparty
+            <label
+              htmlFor="counterparty-input"
+              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5"
+            >
+              <Users className="w-3.5 h-3.5 text-amber-400" />
+              <span>Sovereign Counterparty</span>
             </label>
             <input
+              id="counterparty-input"
               type="text"
               value={counterparty}
               onChange={(e) => setCounterparty(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white text-xs sm:text-sm font-sans focus:outline-none focus:border-cyan-400"
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-xs sm:text-sm font-sans focus:border-amber-400"
               placeholder="e.g. VP of Product & CRO"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5">
+            <label
+              htmlFor="fear-input"
+              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5"
+            >
               <Lock className="w-3.5 h-3.5 text-red-400" />
-              Primary Vulnerability
+              <span>Primary Vulnerability</span>
             </label>
             <input
+              id="fear-input"
               type="text"
               value={primaryFear}
               onChange={(e) => setPrimaryFear(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white text-xs sm:text-sm font-sans focus:outline-none focus:border-red-400"
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-xs sm:text-sm font-sans focus:border-amber-400"
               placeholder="e.g. Constructive Termination"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5">
+            <label
+              htmlFor="risk-select"
+              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5"
+            >
               <Scale className="w-3.5 h-3.5 text-amber-400" />
-              Assessed Risk Level
+              <span>Assessed Risk Level</span>
             </label>
             <select
+              id="risk-select"
               value={riskLevel}
               onChange={(e) => setRiskLevel(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white text-xs sm:text-sm font-mono focus:outline-none focus:border-amber-400 cursor-pointer"
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-xs sm:text-sm font-mono focus:border-amber-400 cursor-pointer"
             >
               <option value="Low">Low &bull; Minor friction</option>
               <option value="Moderate">Moderate &bull; Team tension</option>
@@ -722,78 +790,186 @@ Machine Learning Engineer
 
         {/* Dilemma Narrative */}
         <div>
-          <label className="block text-xs font-mono text-slate-300 uppercase mb-2">
+          <label
+            htmlFor="dilemma-textarea"
+            className="block text-xs font-mono text-slate-300 uppercase mb-2"
+          >
             The Coercive Impasse &bull; Corporate or Algorithmic Demand
           </label>
           <textarea
+            id="dilemma-textarea"
             rows={4}
             value={dilemma}
             onChange={(e) => setDilemma(e.target.value)}
-            className="w-full p-4 rounded-2xl bg-black/60 border border-amber-500/25 text-white text-sm font-sans placeholder-slate-500 focus:outline-none focus:border-amber-400 leading-relaxed"
-            placeholder="Articulate the exact order, suppressed metric, or systemic hazard..."
+            className="w-full p-4 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-sm font-sans placeholder-slate-400 focus:border-amber-400 leading-relaxed"
+            placeholder="Describe the suppressed metric, safety vulnerability, or executive directive..."
           />
         </div>
 
         {/* Submission Action */}
         <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+          <div className="flex items-center gap-2 text-xs font-mono text-slate-300">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Dual-Index RAG: BORI Vidura Nīti &bull; ACM/IEEE Codes Active</span>
+            <span>
+              Matched Locus: Vidura Nīti § {sourceFolio.verse_id} (Folio{" "}
+              {sourceFolio.page_number})
+            </span>
           </div>
 
           <button
-            onClick={() => handleSubmitDilemma()}
+            type="submit"
             disabled={isLoading || !dilemma.trim()}
-            className="inline-flex items-center gap-3 px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-bold text-sm shadow-[0_0_24px_-4px_rgba(245,158,11,0.5)] hover:shadow-[0_0_32px_0_rgba(245,158,11,0.7)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center justify-center gap-2.5 min-h-[48px] px-7 py-3 rounded-md bg-amber-500 hover:bg-amber-400 text-[#08090C] font-semibold text-xs font-mono uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {isLoading ? (
               <>
                 <DharmaChakra className="w-5 h-5" spinning={true} />
-                <span>Consulting Vidura...</span>
+                <span>Synthesizing Four Pillars...</span>
               </>
             ) : (
               <>
-                <Send className="w-4 h-4 text-slate-950" />
-                <span>Summon Imperial Counsel</span>
+                <Send className="w-4 h-4 text-[#08090C]" />
+                <span>Submit Dilemma for Counsel</span>
               </>
             )}
           </button>
         </div>
-      </div>
+      </form>
 
-      {/* Royal Sūtra Scroll: The Four Pillars of Counsel (Sabhā Nirṇaya) */}
+      {/* Explicit Empty State Before Submission (R-27) */}
+      {!rawText && !isLoading && !isBookOpen && (
+        <div className="rounded-lg bg-[#0F1117] border border-[#262A36] p-6 sm:p-8 space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#262A36] pb-4">
+            <div>
+              <div className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold">
+                Chamber Ready for Deliberation
+              </div>
+              <h2 className="font-serif text-lg sm:text-xl font-bold text-[#F3F4F6] mt-0.5">
+                Four-Pillar Deliberation Architecture
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const firstPreset = PRESETS[0];
+                handleSelectPreset(firstPreset);
+                handleSubmitDilemma(undefined, firstPreset.dilemma);
+              }}
+              className="inline-flex items-center gap-2 min-h-[44px] px-4 py-2 rounded-md bg-[#1A140B] hover:bg-[#241C0F] border border-amber-500/45 text-xs font-mono uppercase tracking-wider text-amber-200 transition-colors cursor-pointer"
+            >
+              <span>Run Sample Case (§ 33.16 • Algorithmic Bias)</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div className="p-4 rounded-md bg-[#050608] border border-[#262A36] space-y-1.5">
+              <div className="font-mono text-amber-400 font-semibold">
+                PILLAR I // SAṄKAṬA NIRŪPAṆA
+              </div>
+              <div className="font-serif text-sm font-bold text-[#F3F4F6]">
+                Diagnosis of Moral Hazard
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                Audits role asymmetry, institutional blindness (Moha), and statutory liability exposure.
+              </p>
+            </div>
+            <div className="p-4 rounded-md bg-[#050608] border border-[#262A36] space-y-1.5">
+              <div className="font-mono text-amber-400 font-semibold">
+                PILLAR II // PRAMĀṆA
+              </div>
+              <div className="font-serif text-sm font-bold text-[#F3F4F6]">
+                Archival Folio &amp; Statutory Codes
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                Flips the 3D Udyoga Parva codex to the exact shloka locus and aligns ACM/IEEE clauses.
+              </p>
+            </div>
+            <div className="p-4 rounded-md bg-[#050608] border border-[#262A36] space-y-1.5">
+              <div className="font-mono text-amber-400 font-semibold">
+                PILLAR III // DHARMA-ARTHA VIVEKA
+              </div>
+              <div className="font-serif text-sm font-bold text-[#F3F4F6]">
+                Consequence Balance Sheet
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                Contrasts short-term appeasement (Preyas) against long-term fiduciary insulation (Shreyas).
+              </p>
+            </div>
+            <div className="p-4 rounded-md bg-[#050608] border border-[#262A36] space-y-1.5">
+              <div className="font-mono text-amber-400 font-semibold">
+                PILLAR IV // UPĀYA PRAYOGA
+              </div>
+              <div className="font-serif text-sm font-bold text-[#F3F4F6]">
+                Spoken Script &amp; Paper Trail
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                Delivers verbatim 1-on-1 dialogue lines (Sāma, Dāna, Bheda, Daṇḍa) and Mantra-Gupti logs.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Offline / Deterministic Fallback Notice Banner (R-27 Error/Fallback State) */}
+      {apiNotice && (
+        <div
+          role="status"
+          className="rounded-md bg-[#16130A] border border-amber-500/45 p-4 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-amber-200"
+        >
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>{apiNotice}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleSubmitDilemma()}
+            className="inline-flex items-center gap-1.5 min-h-[38px] px-3 py-1.5 rounded-sm bg-[#050608] hover:bg-[#12151E] border border-amber-500/40 text-amber-300 transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Retry Live Stream</span>
+          </button>
+        </div>
+      )}
+
+      {/* Active Deliberation Output: The Four Pillars of Counsel */}
       {(rawText || isLoading) && (
-        <div className="space-y-8 animate-fade-in">
+        <div className="space-y-8">
           {/* Scroll Header */}
-          <div className="p-6 rounded-3xl glass-panel-gold border-amber-500/40 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
+          <div className="p-6 rounded-lg bg-[#0F1117] border border-amber-500/40 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <DharmaChakra className="w-9 h-9" spinning={isLoading} />
               <div>
-                <span className="text-[11px] font-mono uppercase tracking-widest text-amber-400 font-bold block">
-                  SABHĀ NIRṆAYA &bull; ROYAL STRATEGIC DECREE
+                <span className="text-xs font-mono uppercase tracking-widest text-amber-400 font-bold block">
+                  SABHĀ NIRṆAYA &bull; ARCHIVAL DECREE
                 </span>
-                <h2 className="font-serif text-xl sm:text-2xl font-bold text-white tracking-tight">
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#F3F4F6] tracking-tight">
                   Pronouncement of Prime Minister Vidura
                 </h2>
               </div>
             </div>
 
-            {/* View Mode & Export Actions */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center rounded-xl bg-black/50 p-1 border border-white/10 text-xs font-mono">
+            {/* View Mode & Export Actions (44px+ tap targets) */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center rounded-md bg-[#050608] p-1 border border-[#262A36] text-xs font-mono">
                 <button
+                  type="button"
                   onClick={() => setViewMode("scroll")}
-                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
-                    viewMode === "scroll" ? "bg-amber-500/30 text-amber-200 border border-amber-500/40" : "text-slate-400 hover:text-white"
+                  className={`min-h-[40px] px-3.5 py-1.5 rounded-sm flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    viewMode === "scroll"
+                      ? "bg-amber-500/20 text-amber-200 border border-amber-500/40"
+                      : "text-slate-300 hover:text-[#F3F4F6]"
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5" />
                   <span>Sūtra Scroll</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setViewMode("grid")}
-                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
-                    viewMode === "grid" ? "bg-amber-500/30 text-amber-200 border border-amber-500/40" : "text-slate-400 hover:text-white"
+                  className={`min-h-[40px] px-3.5 py-1.5 rounded-sm flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    viewMode === "grid"
+                      ? "bg-amber-500/20 text-amber-200 border border-amber-500/40"
+                      : "text-slate-300 hover:text-[#F3F4F6]"
                   }`}
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
@@ -802,13 +978,14 @@ Machine Learning Engineer
               </div>
 
               <button
+                type="button"
                 onClick={handleCopyScript}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-200 text-xs font-mono font-medium transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 min-h-[44px] px-4 py-2 rounded-md bg-[#1A140B] hover:bg-[#241C0F] border border-amber-500/45 text-amber-200 text-xs font-mono font-medium transition-colors cursor-pointer"
               >
                 {scriptCopied ? (
                   <>
                     <Check className="w-4 h-4 text-emerald-400" />
-                    <span className="text-emerald-300">Decree Copied!</span>
+                    <span className="text-emerald-300">Decree Copied</span>
                   </>
                 ) : (
                   <>
@@ -819,16 +996,17 @@ Machine Learning Engineer
               </button>
 
               <button
+                type="button"
                 onClick={handleDownloadMarkdown}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-slate-300 text-xs font-mono font-medium transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 min-h-[44px] px-4 py-2 rounded-md bg-[#050608] hover:bg-[#161922] border border-[#262A36] text-slate-200 text-xs font-mono font-medium transition-colors cursor-pointer"
               >
-                <Download className="w-4 h-4 text-cyan-400" />
+                <Download className="w-4 h-4 text-amber-400" />
                 <span>Export .MD</span>
               </button>
             </div>
           </div>
 
-          {/* 3D ANCIENT MANUSCRIPT BOOK VIEWER — OPENS ABOVE THE PILLARS & FLIPS TO VERSE */}
+          {/* 3D ANCIENT MANUSCRIPT BOOK VIEWER */}
           <div id="archival-codex-stage">
             <AncientManuscriptBookViewer
               inline={true}
@@ -847,107 +1025,132 @@ Machine Learning Engineer
             />
           </div>
 
-          {/* VIEW MODE 1: UNIFIED CONTINUOUS ROYAL SŪTRA SCROLL */}
+          {/* VIEW MODE 1: UNIFIED CONTINUOUS SŪTRA SCROLL */}
           {viewMode === "scroll" && (
-            <div className="glass-panel rounded-3xl p-6 sm:p-10 border-amber-500/30 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-
+            <div className="rounded-lg bg-[#0F1117] p-6 sm:p-10 border border-[#262A36] shadow-[0_12px_36px_rgba(0,0,0,0.5)]">
               <PillarRenderer
-                content={rawText || "Dissecting the sovereign dispute and assembling the Four Pillars of Counsel..."}
+                content={
+                  rawText ||
+                  "Dissecting the sovereign dispute and assembling the Four Pillars of Counsel..."
+                }
                 onOpenArchivalCodex={handleOpenAndFlipBook}
                 folioNumber={sourceFolio.page_number}
               />
             </div>
           )}
 
-          {/* VIEW MODE 2: DUAL-PANE / FOUR PILLARS GRID */}
+          {/* VIEW MODE 2: FOUR PILLARS GRID */}
           {viewMode === "grid" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
               {/* Pillar I Card */}
-              <div className="glass-panel rounded-3xl p-6 sm:p-8 border-amber-500/25 shadow-xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-amber-500/20">
+              <div className="rounded-lg bg-[#0F1117] p-6 sm:p-8 border border-[#262A36] space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-[#262A36]">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                    <span className="text-xs font-mono font-bold text-amber-400 px-2 py-0.5 rounded-sm bg-amber-500/10 border border-amber-500/30">
                       PILLAR I
                     </span>
-                    <h3 className="font-serif text-lg font-bold text-white">
+                    <h3 className="font-serif text-lg font-bold text-[#F3F4F6]">
                       Saṅkaṭa Nirūpaṇa &bull; Diagnosis
                     </h3>
                   </div>
-                  <span className="text-xs font-mono text-slate-400">Moral Hazard Audit</span>
+                  <span className="text-xs font-mono text-slate-400">
+                    Moral Hazard Audit
+                  </span>
                 </div>
-                <PillarRenderer content={pillars.p1 || "Analyzing root power dynamic and moral hazard..."} />
+                <PillarRenderer
+                  content={
+                    pillars.p1 ||
+                    "Analyzing root power dynamic and moral hazard..."
+                  }
+                />
               </div>
 
               {/* Pillar II Card */}
-              <div className="glass-panel-gold rounded-3xl p-6 sm:p-8 border-amber-500/30 shadow-xl space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-amber-500/20">
+              <div className="rounded-lg bg-[#0F1117] p-6 sm:p-8 border border-amber-500/35 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#262A36]">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                    <span className="text-xs font-mono font-bold text-amber-400 px-2 py-0.5 rounded-sm bg-amber-500/10 border border-amber-500/30">
                       PILLAR II
                     </span>
-                    <h3 className="font-serif text-lg font-bold text-white">
+                    <h3 className="font-serif text-lg font-bold text-[#F3F4F6]">
                       Pramāṇa &bull; Canonical Standards
                     </h3>
                   </div>
                   <button
+                    type="button"
                     onClick={handleOpenAndFlipBook}
-                    className="flex items-center space-x-2 rounded-lg border border-amber-500/50 bg-gradient-to-r from-amber-950/40 to-amber-900/20 px-4 py-2 text-xs font-serif uppercase tracking-wider text-amber-200 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all cursor-pointer"
+                    className="inline-flex items-center gap-2 min-h-[44px] rounded-md border border-amber-500/45 bg-[#1A140B] hover:bg-[#241C0F] px-4 py-2 text-xs font-mono uppercase tracking-wider text-amber-200 transition-colors cursor-pointer"
                   >
-                    <span>§ Flip Codex to Folio {sourceFolio.page_number} →</span>
+                    <span>§ Flip Codex to Folio {sourceFolio.page_number}</span>
                   </button>
                 </div>
                 <PillarRenderer
-                  content={pillars.p2 || "Aligning Vidura Nīti shlokas with ACM and IEEE clauses..."}
+                  content={
+                    pillars.p2 ||
+                    "Aligning Vidura Nīti shlokas with ACM and IEEE clauses..."
+                  }
                   onOpenArchivalCodex={handleOpenAndFlipBook}
                   folioNumber={sourceFolio.page_number}
                 />
               </div>
 
               {/* Pillar III Card */}
-              <div className="glass-panel rounded-3xl p-6 sm:p-8 border-amber-500/25 shadow-xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-amber-500/20">
+              <div className="rounded-lg bg-[#0F1117] p-6 sm:p-8 border border-[#262A36] space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-[#262A36]">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                    <span className="text-xs font-mono font-bold text-amber-400 px-2 py-0.5 rounded-sm bg-amber-500/10 border border-amber-500/30">
                       PILLAR III
                     </span>
-                    <h3 className="font-serif text-lg font-bold text-white">
+                    <h3 className="font-serif text-lg font-bold text-[#F3F4F6]">
                       Dharma-Artha Viveka &bull; Balance Sheet
                     </h3>
                   </div>
-                  <span className="text-xs font-mono text-slate-400">Preyas vs Shreyas</span>
+                  <span className="text-xs font-mono text-slate-400">
+                    Preyas vs Shreyas
+                  </span>
                 </div>
-                <PillarRenderer content={pillars.p3 || "Auditing short-term appeasement against long-term governance..."} />
+                <PillarRenderer
+                  content={
+                    pillars.p3 ||
+                    "Auditing short-term appeasement against long-term governance..."
+                  }
+                />
               </div>
 
               {/* Pillar IV Card */}
-              <div className="glass-panel-cyan rounded-3xl p-6 sm:p-8 border-cyan-500/30 shadow-xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-cyan-500/20">
+              <div className="rounded-lg bg-[#0F1117] p-6 sm:p-8 border border-[#262A36] space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-[#262A36]">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30">
+                    <span className="text-xs font-mono font-bold text-amber-400 px-2 py-0.5 rounded-sm bg-amber-500/10 border border-amber-500/30">
                       PILLAR IV
                     </span>
-                    <h3 className="font-serif text-lg font-bold text-white">
+                    <h3 className="font-serif text-lg font-bold text-[#F3F4F6]">
                       Upāya Prayoga &bull; Tactical Script
                     </h3>
                   </div>
-                  <span className="text-xs font-mono text-cyan-300">Sāma &bull; Dāna &bull; Bheda &bull; Daṇḍa</span>
+                  <span className="text-xs font-mono text-amber-300">
+                    Sāma &bull; Dāna &bull; Bheda &bull; Daṇḍa
+                  </span>
                 </div>
-                <PillarRenderer content={pillars.p4 || "Formulating verbatim spoken scripts and paper trail protocols..."} />
+                <PillarRenderer
+                  content={
+                    pillars.p4 ||
+                    "Formulating verbatim spoken scripts and paper trail protocols..."
+                  }
+                />
               </div>
             </div>
           )}
 
-          {/* RAGAS Feedback Bar */}
+          {/* Evaluation Telemetry Bar (44x44px star tap targets per R-03) */}
           {!isLoading && rawText && (
-            <div className="glass-panel rounded-2xl p-5 border-amber-500/20 flex flex-wrap items-center justify-between gap-4">
+            <div className="rounded-lg bg-[#0F1117] p-5 border border-[#262A36] flex flex-wrap items-center justify-between gap-4">
               <div>
                 <div className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold">
-                  RAGAS Telemetry Feedback
+                  Practitioner Evaluation Telemetry
                 </div>
                 <div className="text-xs text-slate-300 mt-0.5">
-                  Evaluate the strategic de-escalation effectiveness and source grounding:
+                  Rate the tactical de-escalation utility and archival grounding of this decree:
                 </div>
               </div>
 
@@ -955,11 +1158,13 @@ Machine Learning Engineer
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
+                    type="button"
+                    aria-label={`Rate ${star} out of 5 stars`}
                     onClick={() => handleFeedbackSubmit(star)}
-                    className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
+                    className={`min-h-[44px] min-w-[44px] rounded-md border flex items-center justify-center transition-colors cursor-pointer ${
                       likertRating >= star
-                        ? "bg-amber-400/20 border-amber-500/40 text-amber-300"
-                        : "bg-slate-900 border-white/10 text-slate-500 hover:border-amber-400/30"
+                        ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
+                        : "bg-[#050608] border-[#262A36] text-slate-400 hover:border-amber-400/40"
                     }`}
                   >
                     <Star className="w-4 h-4 fill-current" />
@@ -967,9 +1172,9 @@ Machine Learning Engineer
                 ))}
 
                 {feedbackSubmitted && (
-                  <span className="ml-2 text-xs font-mono text-emerald-400 flex items-center gap-1">
+                  <span className="ml-2 text-xs font-mono text-emerald-300 flex items-center gap-1">
                     <Check className="w-3.5 h-3.5" />
-                    Recorded to Supabase
+                    <span>Recorded to Ledger</span>
                   </span>
                 )}
               </div>

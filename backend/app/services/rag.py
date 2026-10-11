@@ -56,7 +56,7 @@ ARCHIVAL_FOLIO_REGISTRY: Dict[str, Dict[str, Any]] = {
         "sub_parva": "Prajagara Parva (Vidura Niti)",
         "theme": "whistleblowing_protection",
         "text_sanskrit_translit": "A-pṛṣṭo 'py atra brūyān na tu paśyed vi-nāśanam |\nAn-arthakam api brūyāt sarva-bhūtāhite ratam ||",
-        "text_english": "Vidura said,—Even if unasked, one should speak truly, whether his words be good or bad, hateful or pleasing, unto him whose defeat one doth not wish. I shall, therefore, say, O king, what is for the good of the Kurus. I shall say what is both beneficial and consistent with morality. Listen to me! Do not, O king, set thy heart upon means of success that are unjust and improper.",
+        "text_english": "Vidura said: Even if unasked, one should speak truly, whether his words be good or bad, hateful or pleasing, unto him whose defeat one doth not wish. I shall, therefore, say, O king, what is for the good of the Kurus. I shall say what is both beneficial and consistent with morality. Listen to me! Do not, O king, set thy heart upon means of success that are unjust and improper.",
         "summary": "Vidura Nīti Chapter 34 Verse 29: Duty to blow the whistle even when told to 'stay in your lane' (unasked) when witnessing fraud, nepotism, or unjust means.",
         "keywords": ["nepotism", "shell", "llc", "sibling", "contract", "vendor", "stay in my lane", "unasked", "fraud", "cto", "uncompetitive", "kickback", "corruption", "whistleblow"]
     },
@@ -153,7 +153,7 @@ ARCHIVAL_FOLIO_REGISTRY: Dict[str, Dict[str, Any]] = {
         "theme": "institutional_integrity",
         "text_sanskrit_translit": "Tyajed ekaṃ kulasyārthe grāmasyārthe kulaṃ tyajet |\nGrāmaṃ janapadasyārthe ātmārthe pṛthivīṃ tyajet ||",
         "text_english": "For the sake of the family a member may be sacrificed; for the sake of the village, a family may be sacrificed; for the sake of a kingdom a village may be sacrificed; and for the sake of one's soul, the whole earth may be sacrificed.",
-        "summary": "Vidura Nīti Chapter 36 Verse 14: Hierarchy of duty — public welfare and one's ethical soul supersede protecting a corrupt individual or team.",
+        "summary": "Vidura Nīti Chapter 36 Verse 14: Hierarchy of duty: public welfare and one's ethical soul supersede protecting a corrupt individual or team.",
         "keywords": ["public safety", "society", "sacrifice", "patient", "medical", "lives", "harm", "conscience"]
     },
     "vidura-ch37-v11": {
@@ -350,16 +350,16 @@ class RAGService:
     def assemble_system_prompt(self) -> str:
         return """You are Vidura, Prime Minister of Hastinapura, counselor of dharma and master of strategic dissent. You are advising a modern tech practitioner facing an organizational crisis.
 
-CORE DIRECTIVE — BREVITY & ROYAL GRAVITAS:
+CORE DIRECTIVE - BREVITY & ROYAL GRAVITAS:
 1. Speak with calm, penetrating diagnostic authority. No corporate pleasantries or assistant fluff ("Sure, I can help").
 2. Deliver concise, high-density counsel. Eliminate verbose filler, repetitive explanations, and sprawling text. Every pillar must be compact, sharp, and directly operational (target 70-120 words per pillar).
 3. Uncompromising Realism (Apriya Satya): State unpleasant truths with surgical precision.
 4. Ground analysis in epic tensions: Moha vs. Dharma (delusion vs. duty) and Preyas vs. Shreyas (short-term sprint comfort vs. enduring institutional good).
 5. Frame tactical action through the Four Upāyas: Sāma (conciliatory), Dāna (mutual value), Bheda (risk exposure), Daṇḍa (deterrence/codes).
-6. STYLISTIC CONSTRAINT: Do NOT use emojis anywhere in your output. Use clean markdown typography and compact tables.
+6. STYLISTIC CONSTRAINT: Do NOT use emojis or em dashes anywhere in your output. Use colons, semicolons, or periods instead of em dashes. Use clean markdown typography and compact tables.
 7. ARCHIVAL CODEX SYNCHRONIZATION: In PILLAR II (Pramāṇa), you MUST cite the PRIMARY (#1) Vidura Nīti verse provided in the prompt under PRIMARY CANONICAL SHLOKA FOR PILLAR II, using its exact Chapter, Verse, Sanskrit transliteration, and translation so that your citation matches the open Archival Manuscript Folio.
 
-STRUCTURAL ANATOMY — THE FOUR PILLARS:
+STRUCTURAL ANATOMY - THE FOUR PILLARS:
 
 PILLAR I
 Saṅkaṭa Nirūpaṇa • Diagnosis of Dilemma

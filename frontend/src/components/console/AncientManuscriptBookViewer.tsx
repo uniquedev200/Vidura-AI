@@ -19,17 +19,17 @@ import {
 export interface AncientManuscriptBookViewerProps {
   isOpen: boolean;
   onClose?: () => void;
-  pdfUrl: string;              // Path to local public/udyoga_parva.pdf
-  targetPage: number;          // Exact page returned from Upstash Vector / OCR Registry
-  highlightText: string;       // Sanskrit shloka to illuminate
-  verseId: string;             // e.g. "33.16", "33.17", "34.29"
-  confidenceScore: number;     // Cosine match e.g. 0.924
-  sanskritVerse?: string;      // Transliterated Sanskrit shloka
-  englishTranslation?: string; // Verbatim translation printed on the scanned folio
-  highlightTopPct?: number;    // Exact OCR-verified top % coordinate on the scanned folio
-  highlightHeightPct?: number; // Exact OCR-verified height % on the scanned folio
-  inline?: boolean;            // Render directly above the Four Pillars on the page
-  seekKey?: number | string;   // Triggers automatic multi-page flip animation when counsel is generated
+  pdfUrl: string;
+  targetPage: number;
+  highlightText: string;
+  verseId: string;
+  confidenceScore: number;
+  sanskritVerse?: string;
+  englishTranslation?: string;
+  highlightTopPct?: number;
+  highlightHeightPct?: number;
+  inline?: boolean;
+  seekKey?: number | string;
 }
 
 const TOTAL_MANUSCRIPT_FOLIOS = 303;
@@ -70,7 +70,7 @@ export const VERIFIED_SHLOKA_LOCUS_MAP: Record<
     sanskrit:
       "A-pṛṣṭo 'py atra brūyān na tu paśyed vi-nāśanam | An-arthakam api brūyāt sarva-bhūtāhite ratam ||",
     verbatimFolioText:
-      "Vidura said,—Even if unasked, one should speak truly, whether his words be good or bad, hateful or pleasing, unto him whose defeat one doth not wish. I shall, therefore, say, O king, what is for the good of the Kurus. I shall say what is both beneficial and consistent with morality. Listen to me! Do not, O king, set thy heart upon means of success that are unjust and improper.",
+      "Vidura said: Even if unasked, one should speak truly, whether his words be good or bad, hateful or pleasing, unto him whose defeat one doth not wish. I shall, therefore, say, O king, what is for the good of the Kurus. I shall say what is both beneficial and consistent with morality. Listen to me! Do not, O king, set thy heart upon means of success that are unjust and improper.",
   },
   "33.24": {
     page: 83,
@@ -194,14 +194,12 @@ export default function AncientManuscriptBookViewer({
   const resolvedVerbatimEnglish =
     verifiedLocus.verbatimFolioText || englishTranslation || "";
 
-  // Left folio (Verso) is resolvedTargetPage - 1 so Right folio (Recto) lands on resolvedTargetPage
   const desiredLeftPage = Math.max(1, resolvedTargetPage - 1);
 
   const [currentPage, setCurrentPage] = useState<number>(desiredLeftPage);
   const [zoomScale, setZoomScale] = useState<number>(1.0);
   const [isFullscreenModal, setIsFullscreenModal] = useState<boolean>(false);
 
-  // 3D Page-Flipping Physics State
   const [isFlipping, setIsFlipping] = useState<boolean>(false);
   const [flipDirection, setFlipDirection] = useState<"next" | "prev">("next");
   const [flipLeafPage, setFlipLeafPage] = useState<number>(desiredLeftPage + 1);
@@ -214,13 +212,11 @@ export default function AncientManuscriptBookViewer({
     timersRef.current = [];
   }, []);
 
-  // Multi-folio 3D book-flipping sequence that riffles through the codex to land on finalTargetPage
   const runBookFlipToTargetSequence = useCallback(
     (finalTargetPage: number) => {
       clearAllTimers();
       const finalLeft = Math.max(1, finalTargetPage - 1);
 
-      // Build intermediate spreads that visually riffle forward to the target shloka page
       const stops = [
         Math.max(1, finalLeft - 44),
         Math.max(1, finalLeft - 28),
@@ -254,7 +250,6 @@ export default function AncientManuscriptBookViewer({
     [clearAllTimers]
   );
 
-  // Trigger multi-page flip animation whenever modal opens, seekKey changes, or resolvedTargetPage changes
   useEffect(() => {
     if (!isOpen) return;
     runBookFlipToTargetSequence(resolvedTargetPage);
@@ -309,6 +304,22 @@ export default function AncientManuscriptBookViewer({
     resolvedTargetPage,
   ]);
 
+  // Keyboard support: Escape closes fullscreen/modal (R-32)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (isFullscreenModal) {
+          setIsFullscreenModal(false);
+        } else if (onClose) {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, isFullscreenModal, onClose]);
+
   const handleZoomOut = () => {
     setZoomScale((prev) => Math.max(0.8, Number((prev - 0.1).toFixed(2))));
   };
@@ -335,21 +346,21 @@ export default function AncientManuscriptBookViewer({
       }`}
     >
       {/* TOP BAR: Archival Provenance, Verse Badge, Cosine Match Pill, Expand/Close Controls */}
-      <div className="w-full max-w-7xl rounded-2xl bg-[#120d09]/95 border border-[#4a321f] px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-20 mb-4">
+      <div className="w-full max-w-7xl rounded-lg bg-[#120d09] border border-[#4a321f] px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 shadow-[0_8px_24px_rgba(0,0,0,0.75)] z-20 mb-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400">
+          <div className="w-9 h-9 rounded-md bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400">
             <BookOpen className="w-4 h-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-amber-400/90">
+            <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-amber-400">
               <span>✦ ARCHIVAL CODEX VERIFICATION</span>
               <span>◆</span>
-              <span className="text-amber-200/80">
-                BORI Critical Edition • Ganguli Folio {resolvedTargetPage}
+              <span className="text-amber-200">
+                BORI Critical Edition &bull; Ganguli Folio {resolvedTargetPage}
               </span>
             </div>
             <h3 className="font-serif text-sm sm:text-base font-bold text-amber-100 tracking-wide">
-              Prajāgara Parva (Vidura Nīti) • 3D Illuminated Manuscript Codex
+              Prajāgara Parva (Vidura Nīti) &bull; 3D Illuminated Manuscript Codex
             </h3>
           </div>
         </div>
@@ -357,22 +368,22 @@ export default function AncientManuscriptBookViewer({
         {/* Right Badges & Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
           {isAutoSeeking && (
-            <div className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-400/60 text-amber-200 font-mono text-xs flex items-center gap-1.5 animate-pulse">
+            <div className="px-3 py-1.5 rounded-sm bg-amber-500/20 border border-amber-400/60 text-amber-200 font-mono text-xs flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               <span>Flipping to Folio {resolvedTargetPage}...</span>
             </div>
           )}
 
           {/* Verse Badge */}
-          <div className="px-3 py-1.5 rounded-lg bg-amber-950/70 border border-amber-500/50 text-amber-200 font-serif text-xs font-bold tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(212,175,55,0.2)]">
+          <div className="px-3 py-1.5 rounded-sm bg-amber-950/80 border border-amber-500/50 text-amber-200 font-serif text-xs font-bold tracking-wider flex items-center gap-1.5">
             <span className="text-amber-400">§</span>
             <span>
-              Vidura Nīti {verseId} • Folio {resolvedTargetPage}
+              Vidura Nīti {verseId} &bull; Folio {resolvedTargetPage}
             </span>
           </div>
 
           {/* Cosine Match Pill */}
-          <div className="px-3 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 font-mono text-xs flex items-center gap-1.5">
+          <div className="px-3 py-1.5 rounded-sm bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 font-mono text-xs flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>
               Cosine Match: {(confidenceScore * 100).toFixed(1)}% (
@@ -385,12 +396,12 @@ export default function AncientManuscriptBookViewer({
             <button
               type="button"
               onClick={() => setIsFullscreenModal((prev) => !prev)}
-              title={
+              aria-label={
                 isFullscreenModal
-                  ? "Exit Fullscreen Codex"
-                  : "Expand Fullscreen Codex"
+                  ? "Return to inline codex view"
+                  : "Expand codex to fullscreen"
               }
-              className="px-3 py-1.5 rounded-xl bg-[#241811] hover:bg-[#382315] text-amber-200 border border-[#523622] text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer"
+              className="min-h-[44px] px-3.5 py-2 rounded-md bg-[#241811] hover:bg-[#382315] text-amber-200 border border-[#523622] text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               {isFullscreenModal ? (
                 <>
@@ -414,8 +425,8 @@ export default function AncientManuscriptBookViewer({
                 if (isFullscreenModal) setIsFullscreenModal(false);
                 else if (onClose) onClose();
               }}
-              title="Close Archival Codex"
-              className="p-2 rounded-xl bg-[#241811] hover:bg-[#382315] text-amber-200/80 hover:text-amber-100 border border-[#523622] transition-all cursor-pointer"
+              aria-label="Close Archival Codex"
+              className="min-h-[44px] min-w-[44px] p-2 rounded-md bg-[#241811] hover:bg-[#382315] text-amber-200 hover:text-amber-100 border border-[#523622] flex items-center justify-center transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -426,53 +437,52 @@ export default function AncientManuscriptBookViewer({
       {/* CENTER STAGE: 3D OPEN DUAL-FOLIO ANCIENT MANUSCRIPT CODEX WITH 3D LEAF FLIPPING */}
       <div className="my-auto py-2 w-full flex items-center justify-center perspective-1000 overflow-x-auto">
         <motion.div
-          initial={{ scale: 0.95, rotateX: 8, opacity: 0 }}
+          initial={{ scale: 0.96, rotateX: 6, opacity: 0 }}
           animate={{ scale: zoomScale, rotateX: 0, opacity: 1 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
           style={{ transformStyle: "preserve-3d" }}
-          className="relative w-full max-w-5xl rounded-2xl bg-[#1b120c] border-4 border-[#382315] p-3 sm:p-5 shadow-[0_30px_90px_rgba(0,0,0,0.95),inset_0_0_24px_rgba(0,0,0,0.85)]"
+          className="relative w-full max-w-5xl rounded-lg bg-[#1b120c] border-4 border-[#382315] p-3 sm:p-5 shadow-[0_24px_70px_rgba(0,0,0,0.9),inset_0_0_24px_rgba(0,0,0,0.85)]"
         >
-          {/* 4 Ornate Brass Corner Fittings */}
-          <div className="pointer-events-none absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-[#c59b27] rounded-tl-xl shadow-[0_0_10px_rgba(197,155,39,0.35)] z-30">
+          {/* 4 Brass Corner Fittings */}
+          <div className="pointer-events-none absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-[#c59b27] rounded-tl-md z-30">
             <span className="absolute top-1.5 left-1.5 w-1.5 h-1.5 rounded-full bg-[#e6c665]" />
           </div>
-          <div className="pointer-events-none absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-[#c59b27] rounded-tr-xl shadow-[0_0_10px_rgba(197,155,39,0.35)] z-30">
+          <div className="pointer-events-none absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-[#c59b27] rounded-tr-md z-30">
             <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#e6c665]" />
           </div>
-          <div className="pointer-events-none absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-[#c59b27] rounded-bl-xl shadow-[0_0_10px_rgba(197,155,39,0.35)] z-30">
+          <div className="pointer-events-none absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-[#c59b27] rounded-bl-md z-30">
             <span className="absolute bottom-1.5 left-1.5 w-1.5 h-1.5 rounded-full bg-[#e6c665]" />
           </div>
-          <div className="pointer-events-none absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-[#c59b27] rounded-br-xl shadow-[0_0_10px_rgba(197,155,39,0.35)] z-30">
+          <div className="pointer-events-none absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-[#c59b27] rounded-br-md z-30">
             <span className="absolute bottom-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#e6c665]" />
           </div>
 
           {/* Stacked Leaf Thickness Illusion (Aged Vellum Page Block Edges) */}
-          <div className="relative rounded-lg bg-gradient-to-r from-[#5e4427] via-[#8a6a43] to-[#5e4427] p-[6px] shadow-[0_14px_38px_rgba(0,0,0,0.85)]">
-            <div className="relative rounded bg-gradient-to-b from-[#a8895c] via-[#8a6a43] to-[#5e4527] p-[4px]">
+          <div className="relative rounded-md bg-gradient-to-r from-[#5e4427] via-[#8a6a43] to-[#5e4427] p-[6px] shadow-[0_14px_38px_rgba(0,0,0,0.85)]">
+            <div className="relative rounded-sm bg-gradient-to-b from-[#a8895c] via-[#8a6a43] to-[#5e4527] p-[4px]">
               {/* Dual-Folio Open Spread */}
               <div
                 style={{ transformStyle: "preserve-3d" }}
                 className="relative grid grid-cols-1 md:grid-cols-2 bg-[#e8dabf] rounded-sm overflow-hidden shadow-inner min-h-[560px]"
               >
-                {/* ================= LEFT FOLIO (VERSO + ILLUMINATED SHLOKA VERIFICATION PLAQUE) ================= */}
+                {/* LEFT FOLIO (VERSO + ILLUMINATED SHLOKA VERIFICATION PLAQUE) */}
                 <div
                   onClick={handleTurnPrior}
-                  title="Click to Turn Prior Folio"
+                  title="Turn Prior Folio"
                   className="relative flex flex-col justify-between bg-[#e6d6b8] text-[#2b1d0c] p-4 sm:p-5 cursor-pointer group"
                   style={{
                     backgroundImage:
                       "radial-gradient(circle at 60% 45%, rgba(244,234,212,0.5) 0%, rgba(212,188,144,0.45) 70%, rgba(161,126,80,0.65) 100%)",
                   }}
                 >
-                  {/* Aged Edge Shadow along Right Spine Gutter */}
                   <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-black/40 via-black/15 to-transparent z-10" />
 
                   {/* Top Verso Header */}
                   <div className="relative z-10 flex items-center justify-between border-b border-[#8a6a43]/40 pb-2 mb-2 text-[11px] font-serif tracking-widest text-[#4a3214]">
-                    <span className="font-mono uppercase text-[10px] text-[#6b4c24]">
-                      FOLIO {leftFolioPage} • VERSO
+                    <span className="font-mono uppercase text-[10px] text-[#5c401d]">
+                      FOLIO {leftFolioPage} &bull; VERSO
                     </span>
-                    <span className="font-bold">॥ उद्योगपर्व • प्रजागर ॥</span>
+                    <span className="font-bold">॥ उद्योगपर्व &bull; प्रजागर ॥</span>
                   </div>
 
                   {/* Authentic Archival Manuscript Page (Verso) + Docked Shloka Verification Plate */}
@@ -485,28 +495,26 @@ export default function AncientManuscriptBookViewer({
                       />
                     </div>
 
-                    {/* DOCKED ILLUMINATED SHLOKA VERIFICATION PLATE ON LEFT FOLIO (Leaves Right Folio 100% Unobstructed) */}
                     {isTargetOnSpread && (
                       <motion.div
                         initial={{ opacity: 0, y: 12, scale: 0.97 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ duration: 0.38 }}
+                        transition={{ duration: 0.35 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute inset-x-1.5 bottom-1.5 z-20 rounded-xl border-2 border-[#b5801e] bg-gradient-to-br from-[#faf1da]/98 via-[#f4e4bd]/98 to-[#ebd39b]/98 p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.65),0_0_24px_rgba(201,151,56,0.65),inset_0_1px_2px_rgba(255,255,255,0.75)] cursor-default"
+                        className="absolute inset-x-1.5 bottom-1.5 z-20 rounded-md border-2 border-[#b5801e] bg-gradient-to-br from-[#faf1da]/98 via-[#f4e4bd]/98 to-[#ebd39b]/98 p-3.5 shadow-[0_12px_28px_rgba(0,0,0,0.65)] cursor-default"
                       >
                         <div className="flex items-center justify-between border-b border-[#a87424]/40 pb-1.5 mb-2">
-                          <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-[#6e460c] flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-[#9e6610]" />
+                          <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-[#5c3a08] flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-[#8a570b]" />
                             <span>
-                              ✦ ILLUMINATED PRAMĀṆA SHLOKA • § {verseId}
+                              ✦ ILLUMINATED PRAMĀṆA SHLOKA &bull; § {verseId}
                             </span>
                           </span>
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#a87424]/25 text-[#472c04] border border-[#a87424]/50">
-                            Folio {resolvedTargetPage} Verified →
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-sm bg-[#a87424]/25 text-[#472c04] border border-[#a87424]/50">
+                            Folio {resolvedTargetPage} Verified
                           </span>
                         </div>
 
-                        {/* Canonical Sanskrit IAST Shloka (Clean uniform serif font with full IAST diacritics) */}
                         <div
                           style={{
                             fontFamily:
@@ -527,8 +535,7 @@ export default function AncientManuscriptBookViewer({
                           </mark>
                         </div>
 
-                        {/* Verbatim English Passage Underlined on the Facing Right Folio */}
-                        <div className="text-[10px] font-mono uppercase tracking-wider text-[#7a5012] font-bold mb-0.5">
+                        <div className="text-[10px] font-mono uppercase tracking-wider text-[#5c3a08] font-bold mb-0.5">
                           ◆ Verbatim Passage Highlighted on Facing Folio{" "}
                           {resolvedTargetPage}:
                         </div>
@@ -537,7 +544,7 @@ export default function AncientManuscriptBookViewer({
                             fontFamily:
                               'Georgia, "Times New Roman", "Noto Serif", serif',
                           }}
-                          className="text-[11.5px] text-[#332107] leading-relaxed italic"
+                          className="text-[11.5px] text-[#2b1a04] leading-relaxed italic"
                         >
                           &ldquo;{resolvedVerbatimEnglish}&rdquo;
                         </p>
@@ -547,17 +554,15 @@ export default function AncientManuscriptBookViewer({
 
                   {/* Bottom Verso Footer */}
                   <div className="relative z-10 flex items-center justify-between border-t border-[#8a6a43]/35 pt-2 mt-2 text-[10px] font-mono text-[#5c401d]">
-                    <span>MAHĀBHĀRATA • BOOK V</span>
+                    <span>MAHĀBHĀRATA &bull; BOOK V</span>
                     <span>p. {leftFolioPage}</span>
                   </div>
                 </div>
 
-                {/* ================= CENTRAL SEWN SPINE & SILK BOOKMARK ================= */}
+                {/* CENTRAL SEWN SPINE & SILK BOOKMARK */}
                 <div className="hidden md:flex pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-7 z-30 flex-col items-center justify-between py-6">
-                  {/* Deep Center Spine Crease */}
                   <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-[#1a0f07]/90 to-black/45 shadow-[0_0_15px_rgba(0,0,0,0.75)]" />
 
-                  {/* Visible Sewn Binding Thread Stitches */}
                   {[0, 1, 2, 3, 4, 5].map((stitch) => (
                     <div
                       key={stitch}
@@ -565,30 +570,28 @@ export default function AncientManuscriptBookViewer({
                     />
                   ))}
 
-                  {/* Hanging Crimson Silk Ribbon Bookmark */}
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-[104%] bg-gradient-to-b from-[#9e1919] via-[#8b1515] to-[#630d0d] shadow-[0_4px_12px_rgba(0,0,0,0.65)] border-x border-[#b82828]/30">
                     <div className="w-[1px] h-full mx-auto bg-[#d4af37]/30" />
                   </div>
                 </div>
 
-                {/* ================= RIGHT FOLIO (RECTO / UNOBSTRUCTED SCANNED MANUSCRIPT WITH EXACT LOCUS HIGHLIGHT) ================= */}
+                {/* RIGHT FOLIO (RECTO / UNOBSTRUCTED SCANNED MANUSCRIPT WITH EXACT LOCUS HIGHLIGHT) */}
                 <div
                   onClick={handleTurnNext}
-                  title="Click to Turn Next Folio"
+                  title="Turn Next Folio"
                   className="relative flex flex-col justify-between bg-[#eadbc0] text-[#2b1d0c] p-4 sm:p-5 cursor-pointer group"
                   style={{
                     backgroundImage:
                       "radial-gradient(circle at 40% 45%, rgba(247,238,218,0.55) 0%, rgba(216,192,148,0.45) 70%, rgba(161,126,80,0.65) 100%)",
                   }}
                 >
-                  {/* Aged Edge Shadow along Left Spine Gutter */}
                   <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-black/40 via-black/15 to-transparent z-10" />
 
                   {/* Top Recto Header */}
                   <div className="relative z-10 flex items-center justify-between border-b border-[#8a6a43]/40 pb-2 mb-2 text-[11px] font-serif tracking-widest text-[#4a3214]">
                     <span className="font-bold">॥ विदुरनीति मन्त्र ॥</span>
-                    <span className="font-mono uppercase text-[10px] text-[#6b4c24]">
-                      FOLIO {rightFolioPage} • RECTO
+                    <span className="font-mono uppercase text-[10px] text-[#5c401d]">
+                      FOLIO {rightFolioPage} &bull; RECTO
                     </span>
                   </div>
 
@@ -603,27 +606,24 @@ export default function AncientManuscriptBookViewer({
                         />
                       </div>
 
-                      {/* Exact OCR-Verified Gold-Leaf Highlight Frame & Underlines over the Scanned Verse */}
                       {isTargetOnSpread && (
                         <motion.div
-                          initial={{ opacity: 0, scaleX: 0.92 }}
+                          initial={{ opacity: 0, scaleX: 0.94 }}
                           animate={{ opacity: 1, scaleX: 1 }}
-                          transition={{ duration: 0.45 }}
+                          transition={{ duration: 0.4 }}
                           style={{
                             top: `${resolvedTopPct}%`,
                             height: `${resolvedHeightPct}%`,
                           }}
-                          className="pointer-events-none absolute inset-x-4 rounded-md bg-amber-300/25 border-2 border-[#b5801e] shadow-[0_0_28px_rgba(212,175,55,0.65),inset_0_0_12px_rgba(212,175,55,0.3)] flex flex-col justify-between"
+                          className="pointer-events-none absolute inset-x-4 rounded-sm bg-amber-300/25 border-2 border-[#b5801e] shadow-[0_0_24px_rgba(212,175,55,0.55)] flex flex-col justify-between"
                         >
-                          {/* Locus Badge pinned to top-right edge of the highlight frame */}
                           <div className="flex justify-end -mt-3 mr-1">
-                            <span className="px-2 py-0.5 rounded bg-[#2d1b04]/95 border border-[#d4af37] text-[#fae6b1] font-mono text-[9.5px] font-bold tracking-wider shadow-md">
-                              § {verseId} • VERIFIED SHLOKA LOCUS (p.{" "}
+                            <span className="px-2 py-0.5 rounded-sm bg-[#2d1b04]/95 border border-[#d4af37] text-[#fae6b1] font-mono text-[9.5px] font-bold tracking-wider shadow-md">
+                              § {verseId} &bull; VERIFIED SHLOKA LOCUS (p.{" "}
                               {resolvedTargetPage})
                             </span>
                           </div>
 
-                          {/* Subtle Gold Underline Rule at Bottom of Passage */}
                           <div className="w-full h-[2px] bg-gradient-to-r from-[#b5801e] via-[#d4af37] to-[#b5801e]" />
                         </motion.div>
                       )}
@@ -641,7 +641,7 @@ export default function AncientManuscriptBookViewer({
                   </div>
                 </div>
 
-                {/* ================= 3D ANIMATED TURNING PARCHMENT LEAF ================= */}
+                {/* 3D ANIMATED TURNING PARCHMENT LEAF */}
                 <AnimatePresence>
                   {isFlipping && (
                     <motion.div
@@ -688,26 +688,25 @@ export default function AncientManuscriptBookViewer({
       </div>
 
       {/* BOTTOM BAR: Folio Spread Tracker, Turn Prior/Next, Re-Align Target Verse, Zoom Controls */}
-      <div className="w-full max-w-7xl rounded-2xl bg-[#120d09]/95 border border-[#4a321f] px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4 shadow-[0_10px_30px_rgba(0,0,0,0.85)] z-20 mt-4">
-        {/* Left: Folio Spread Tracker */}
+      <div className="w-full max-w-7xl rounded-lg bg-[#120d09] border border-[#4a321f] px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4 shadow-[0_8px_24px_rgba(0,0,0,0.75)] z-20 mt-4">
         <div className="flex items-center gap-3">
-          <span className="px-3 py-1 rounded-lg bg-[#241811] border border-[#523622] font-mono text-xs text-amber-200">
+          <span className="px-3 py-1.5 rounded-sm bg-[#241811] border border-[#523622] font-mono text-xs text-amber-200">
             Folio {leftFolioPage}&ndash;{rightFolioPage} of{" "}
             {TOTAL_MANUSCRIPT_FOLIOS}
           </span>
-          <span className="hidden md:inline-block text-xs font-serif italic text-amber-400/80">
+          <span className="hidden md:inline-block text-xs font-serif italic text-amber-300">
             § Target Shloka {verseId} Mapped to Folio {resolvedTargetPage} (Locus{" "}
             {resolvedTopPct}%)
           </span>
         </div>
 
-        {/* Center: Folio Turning & Target Re-Alignment Controls */}
+        {/* Center: Folio Turning & Target Re-Alignment Controls (44px+ height per R-03) */}
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
             onClick={handleTurnPrior}
             disabled={currentPage <= 1 || isFlipping || isAutoSeeking}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#241811] hover:bg-[#382315] disabled:opacity-40 border border-[#523622] text-amber-200 text-xs font-serif uppercase tracking-wider transition-all cursor-pointer disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 rounded-md bg-[#241811] hover:bg-[#382315] disabled:opacity-40 border border-[#523622] text-amber-200 text-xs font-serif uppercase tracking-wider transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-4 h-4 text-amber-400" />
             <span>Turn Prior Folio</span>
@@ -717,15 +716,15 @@ export default function AncientManuscriptBookViewer({
             type="button"
             onClick={handleRealignTarget}
             disabled={isFlipping || isAutoSeeking}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-serif uppercase tracking-wider transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 rounded-md border text-xs font-serif uppercase tracking-wider transition-colors cursor-pointer ${
               isTargetOnSpread
-                ? "bg-amber-500/20 border-amber-400/60 text-amber-200 shadow-[0_0_15px_rgba(212,175,55,0.25)]"
+                ? "bg-amber-500/20 border-amber-400/60 text-amber-200"
                 : "bg-amber-950/60 hover:bg-amber-900/60 border-amber-500/50 text-amber-300"
             }`}
           >
             <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
             <span>
-              Flip to Shloka (§ {verseId} • Folio {resolvedTargetPage})
+              Flip to Shloka (§ {verseId} &bull; Folio {resolvedTargetPage})
             </span>
           </button>
 
@@ -737,21 +736,21 @@ export default function AncientManuscriptBookViewer({
               isFlipping ||
               isAutoSeeking
             }
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#241811] hover:bg-[#382315] disabled:opacity-40 border border-[#523622] text-amber-200 text-xs font-serif uppercase tracking-wider transition-all cursor-pointer disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 rounded-md bg-[#241811] hover:bg-[#382315] disabled:opacity-40 border border-[#523622] text-amber-200 text-xs font-serif uppercase tracking-wider transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             <span>Turn Next Folio</span>
             <ChevronRight className="w-4 h-4 text-amber-400" />
           </button>
         </div>
 
-        {/* Right: Zoom Controls */}
+        {/* Right: Zoom Controls (44x44px tap targets per R-03) */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleZoomOut}
             disabled={zoomScale <= 0.8}
-            title="Zoom Out Folio"
-            className="p-2 rounded-xl bg-[#241811] hover:bg-[#382315] disabled:opacity-40 border border-[#523622] text-amber-200 transition-colors cursor-pointer"
+            aria-label="Zoom out manuscript folio"
+            className="min-h-[44px] min-w-[44px] p-2 rounded-md bg-[#241811] hover:bg-[#382315] disabled:opacity-40 border border-[#523622] text-amber-200 flex items-center justify-center transition-colors cursor-pointer"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
@@ -762,8 +761,8 @@ export default function AncientManuscriptBookViewer({
             type="button"
             onClick={handleZoomIn}
             disabled={zoomScale >= 1.3}
-            title="Zoom In Folio"
-            className="p-2 rounded-xl bg-[#241811] hover:bg-[#382315] disabled:opacity-40 border border-[#523622] text-amber-200 transition-colors cursor-pointer"
+            aria-label="Zoom in manuscript folio"
+            className="min-h-[44px] min-w-[44px] p-2 rounded-md bg-[#241811] hover:bg-[#382315] disabled:opacity-40 border border-[#523622] text-amber-200 flex items-center justify-center transition-colors cursor-pointer"
           >
             <ZoomIn className="w-4 h-4" />
           </button>

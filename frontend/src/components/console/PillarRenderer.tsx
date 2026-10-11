@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Copy, Check, Terminal, Scroll, Scale, Shield, AlertTriangle } from "lucide-react";
+import { Copy, Check, Terminal, BookOpen } from "lucide-react";
 
 interface PillarRendererProps {
   content: string;
@@ -14,14 +14,14 @@ interface PillarRendererProps {
 export default function PillarRenderer({
   content,
   onOpenArchivalCodex,
-  folioNumber = 79,
+  folioNumber = 111,
 }: PillarRendererProps) {
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [copiedCodeText, setCopiedCodeText] = useState<string | null>(null);
 
-  const handleCopyCode = (codeText: string, idx: number) => {
+  const handleCopyCode = (codeText: string) => {
     navigator.clipboard.writeText(codeText);
-    setCopiedIndex(idx);
-    setTimeout(() => setCopiedIndex(null), 2000);
+    setCopiedCodeText(codeText);
+    setTimeout(() => setCopiedCodeText(null), 2000);
   };
 
   return (
@@ -30,7 +30,7 @@ export default function PillarRenderer({
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children }) => (
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white border-b border-amber-500/30 pb-3 mt-8 mb-4 gold-gradient-text">
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#F3F4F6] border-b border-amber-500/30 pb-3 mt-8 mb-4">
               {children}
             </h1>
           ),
@@ -47,12 +47,12 @@ export default function PillarRenderer({
               headingStr.toUpperCase().includes("PRAMĀṆA") ||
               headingStr.toUpperCase().includes("PRAMANA");
             return (
-              <div className="mt-8 mb-4 pt-4 border-t border-amber-500/20 flex flex-wrap items-center justify-between gap-3">
+              <div className="mt-8 mb-4 pt-4 border-t border-[#262A36] flex flex-wrap items-center justify-between gap-3">
                 <div>
                   {isPillar && (
                     <div className="text-[11px] font-mono uppercase tracking-widest text-amber-400 font-bold mb-1 flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                      <span>IMPERIAL SŪTRA DELIBERATION</span>
+                      <span>SABHĀ SŪTRA DELIBERATION</span>
                     </div>
                   )}
                   <h2 className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-amber-200 flex items-center gap-2">
@@ -63,9 +63,10 @@ export default function PillarRenderer({
                   <button
                     type="button"
                     onClick={onOpenArchivalCodex}
-                    className="flex items-center space-x-2 rounded-lg border border-amber-500/50 bg-gradient-to-r from-amber-950/40 to-amber-900/20 px-4 py-2 text-xs font-serif uppercase tracking-wider text-amber-200 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all cursor-pointer"
+                    className="inline-flex items-center gap-2 min-h-[44px] rounded-md border border-amber-500/45 bg-[#1A140B] hover:bg-[#241C0F] px-4 py-2 text-xs font-mono uppercase tracking-wider text-amber-200 hover:border-amber-400 transition-colors cursor-pointer"
                   >
-                    <span>§ Open Archival Codex (Folio {folioNumber}) →</span>
+                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Inspect Folio {folioNumber} in Codex</span>
                   </button>
                 )}
               </div>
@@ -79,7 +80,7 @@ export default function PillarRenderer({
               headingStr.toUpperCase().includes("PRAMANA");
             return (
               <div className="mt-6 mb-3 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="font-serif text-lg font-semibold text-white flex items-center gap-2">
+                <h3 className="font-serif text-lg font-semibold text-[#F3F4F6] flex items-center gap-2">
                   <span className="text-amber-400 font-mono text-xs">§</span>
                   <span>{children}</span>
                 </h3>
@@ -87,9 +88,10 @@ export default function PillarRenderer({
                   <button
                     type="button"
                     onClick={onOpenArchivalCodex}
-                    className="flex items-center space-x-2 rounded-lg border border-amber-500/50 bg-gradient-to-r from-amber-950/40 to-amber-900/20 px-4 py-2 text-xs font-serif uppercase tracking-wider text-amber-200 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all cursor-pointer"
+                    className="inline-flex items-center gap-2 min-h-[44px] rounded-md border border-amber-500/45 bg-[#1A140B] hover:bg-[#241C0F] px-4 py-2 text-xs font-mono uppercase tracking-wider text-amber-200 hover:border-amber-400 transition-colors cursor-pointer"
                   >
-                    <span>§ Open Archival Codex (Folio {folioNumber}) →</span>
+                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Inspect Folio {folioNumber} in Codex</span>
                   </button>
                 )}
               </div>
@@ -101,7 +103,7 @@ export default function PillarRenderer({
             </h4>
           ),
           p: ({ children }) => (
-            <p className="text-slate-300 leading-relaxed my-3 font-light text-sm sm:text-base">
+            <p className="text-slate-300 leading-relaxed my-3 text-sm sm:text-base">
               {children}
             </p>
           ),
@@ -109,34 +111,36 @@ export default function PillarRenderer({
             <strong className="font-semibold text-amber-200">{children}</strong>
           ),
           blockquote: ({ children }) => (
-            <blockquote className="p-4 rounded-xl bg-black/40 border-l-4 border-amber-500/60 font-serif italic text-amber-100 my-4">
+            <blockquote className="p-4 rounded-md bg-[#050608] border-l-4 border-amber-500 font-serif italic text-amber-100 my-4">
               {children}
             </blockquote>
           ),
           hr: () => (
             <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-amber-500/20" />
+                <div className="w-full border-t border-[#262A36]" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-[#08090C] px-3 font-mono text-xs text-amber-400">§ ◆ §</span>
+                <span className="bg-[#0F1117] px-3 font-mono text-xs text-amber-400">
+                  § ◆ §
+                </span>
               </div>
             </div>
           ),
           table: ({ children }) => (
-            <div className="my-6 overflow-x-auto rounded-2xl border border-amber-500/25 bg-slate-950/70 shadow-lg">
+            <div className="my-6 overflow-x-auto rounded-lg border border-[#262A36] bg-[#050608]">
               <table className="w-full border-collapse text-left text-xs sm:text-sm">
                 {children}
               </table>
             </div>
           ),
           thead: ({ children }) => (
-            <thead className="border-b border-amber-500/30 bg-amber-500/10 text-amber-300 font-mono uppercase tracking-wider text-xs">
+            <thead className="border-b border-[#262A36] bg-[#12151E] text-amber-300 font-mono uppercase tracking-wider text-xs">
               {children}
             </thead>
           ),
           tbody: ({ children }) => (
-            <tbody className="divide-y divide-white/5 font-sans text-slate-300">
+            <tbody className="divide-y divide-[#1E222D] font-sans text-slate-300">
               {children}
             </tbody>
           ),
@@ -168,14 +172,15 @@ export default function PillarRenderer({
           li: ({ children }) => (
             <li className="leading-relaxed pl-1 text-sm">{children}</li>
           ),
-          code: ({ className, children, ...props }) => {
+          code: ({ children, ...props }) => {
             const codeString = String(children).replace(/\n$/, "");
             const isMultiline = codeString.includes("\n");
+            const isCopied = copiedCodeText === codeString;
 
             if (!isMultiline) {
               return (
                 <code
-                  className="px-1.5 py-0.5 rounded bg-black/60 border border-amber-500/25 text-amber-300 font-mono text-xs"
+                  className="px-1.5 py-0.5 rounded-sm bg-[#050608] border border-[#262A36] text-amber-300 font-mono text-xs"
                   {...props}
                 >
                   {children}
@@ -184,22 +189,31 @@ export default function PillarRenderer({
             }
 
             return (
-              <div className="relative my-5 rounded-2xl bg-black/80 border border-amber-500/30 overflow-hidden shadow-2xl">
-                <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 bg-slate-950 text-xs font-mono text-slate-400">
+              <div className="relative my-5 rounded-lg bg-[#050608] border border-[#262A36] overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-[#262A36] bg-[#0B0D13] text-xs font-mono text-slate-300">
                   <div className="flex items-center gap-2 text-amber-300 font-medium">
                     <Terminal className="w-3.5 h-3.5" />
-                    <span>CANONICAL ARTIFACT &bull; VERBATIM PROTOCOL</span>
+                    <span>VERBATIM ARTIFACT &bull; RECORD PROTOCOL</span>
                   </div>
                   <button
-                    onClick={() => handleCopyCode(codeString, Math.random())}
+                    onClick={() => handleCopyCode(codeString)}
                     type="button"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer text-[11px]"
+                    className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1 rounded-sm bg-[#141822] hover:bg-[#1E2433] border border-[#262A36] text-slate-200 hover:text-[#F3F4F6] transition-colors cursor-pointer text-xs"
                   >
-                    <Copy className="w-3 h-3 text-amber-400" />
-                    <span>Copy Text</span>
+                    {isCopied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-300">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Copy Artifact</span>
+                      </>
+                    )}
                   </button>
                 </div>
-                <pre className="p-4 overflow-x-auto font-mono text-xs text-amber-100 leading-relaxed bg-black/60">
+                <pre className="p-4 overflow-x-auto font-mono text-xs text-amber-100 leading-relaxed bg-[#050608]">
                   <code>{children}</code>
                 </pre>
               </div>

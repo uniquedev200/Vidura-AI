@@ -1,98 +1,95 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Check, X, Shield, BookOpen, Scale, Award, Database, Cpu } from "lucide-react";
+import { Check, X, BookOpen, Scale, Award } from "lucide-react";
 
 const COMPARISON_DATA = [
   {
     criterion: "Source Grounding & Provenance",
-    generic: "Unverified training weights with high hallucination risk",
-    vidura: "Dual verified index: BORI Critical Edition Vidura Nīti & official ACM/IEEE codes",
-    genericOk: false,
+    generic: "Unverified pre-training weights susceptible to fabricated verse numbers",
+    vidura: "Dual-index retrieval: 1890 Ganguli Udyoga Parva folios (BORI concordance) + ACM/IEEE codes",
   },
   {
     criterion: "Conflict De-escalation Strategy",
-    generic: "Generic platitudes ('consult HR', 'assert boundaries') that often lead to retaliation",
-    vidura: "Ancient Upāyas (Sāma, Dāna, Bheda) translating dissent into executive risk protection",
-    genericOk: false,
+    generic: "Generic HR platitudes ('escalate immediately', 'refuse directive') that trigger retaliation",
+    vidura: "Classical Upāyas (Sāma, Dāna, Bheda, Daṇḍa) framing dissent as executive risk insulation",
   },
   {
-    criterion: "Whistleblowing & Paper-Trail Insulation",
-    generic: "Abstract or absent legal/operational guidance",
-    vidura: "Step-by-step pre-meeting documentation protocols and non-retaliation checklists",
-    genericOk: false,
+    criterion: "Whistleblowing & Paper-Trail Protocol",
+    generic: "Abstract ethical commentary without operational documentation steps",
+    vidura: "Mantra-Gupti pre-meeting Git commit hashes, timestamped logs, and statutory disclosure memos",
   },
   {
-    criterion: "Inference Latency & Determinism",
-    generic: "Variable 2,000ms - 5,000ms response times",
-    vidura: "Sub-500ms streaming responses powered by Groq LPU engine",
-    genericOk: false,
+    criterion: "Archival Manuscript Verification",
+    generic: "Plain-text chat completion with zero primary document inspection",
+    vidura: "Interactive 3D Dual-Folio Codex flipping to exact OCR-verified shloka coordinates",
   },
   {
-    criterion: "RAGAS Faithfulness Benchmark",
-    generic: "Uncalibrated baseline (< 0.70)",
-    vidura: "Benchmark verified > 0.91 Faithfulness & 0.94 Answer Relevance",
-    genericOk: false,
+    criterion: "Evaluation & Telemetry Rubric",
+    generic: "Unmeasured conversational output",
+    vidura: "4-dimension rubric tracking Faithfulness, Answer Relevance, Context Precision, and Actionability",
   },
   {
     criterion: "Ethical Philosophy Grounding",
-    generic: "Utilitarian bias / Western-centric compliance boilerplate",
-    vidura: "3,000-year Dharmic governance merged with IEEE/ACM computing ethics",
-    genericOk: false,
+    generic: "Single-framework compliance boilerplate",
+    vidura: "Dharma-Artha Viveka (Shreyas vs. Preyas) cross-referenced with ACM 1.1-3.7 & IEEE 1.1-7.8",
   },
 ];
 
 export default function ResearchGrounding() {
   return (
-    <section id="research" className="relative py-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-amber-500/10">
-      {/* Section Header */}
-      <div className="text-center max-w-3xl mx-auto mb-16">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full glass-panel-subtle border-amber-500/20 mb-4">
-          <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-          <span className="text-xs uppercase font-mono tracking-widest text-amber-300">
-            Empirical Validation &bull; Academic Rigor
+    <section
+      id="research"
+      className="relative py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-[#262A36]"
+    >
+      {/* Left-Aligned Section Header */}
+      <div className="max-w-3xl mb-14">
+        <div className="border-l-2 border-amber-500 pl-3.5 py-0.5 mb-3">
+          <span className="text-xs uppercase font-mono tracking-[0.18em] text-amber-400 font-semibold">
+            § 02 // Corpus Grounding &amp; Empirical Validation
           </span>
         </div>
-        <h2 className="font-serif text-3xl sm:text-5xl font-bold text-white tracking-tight">
-          Research Grounding &amp; <span className="gold-gradient-text">Benchmark Superiority</span>
+        <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#F3F4F6] tracking-tight">
+          Archival Provenance vs.{" "}
+          <span className="text-[#E5C158]">Unverified Chatbots</span>
         </h2>
-        <p className="mt-4 text-base sm:text-lg text-slate-400 font-light">
-          Why generic consumer LLMs fail high-stakes technical dilemmas, and how Vidura-AI delivers
-          mathematically and historically grounded strategic counsel.
+        <p className="mt-3 text-base text-slate-300 leading-relaxed">
+          Why generic language models fail high-stakes engineering ethics disputes, and how Vidura-AI anchors every recommendation in verifiable primary texts.
         </p>
       </div>
 
-      {/* Comparison Table */}
-      <div className="glass-panel rounded-3xl p-6 sm:p-8 border-amber-500/20 overflow-hidden shadow-2xl">
+      {/* Comparative Evaluation Matrix */}
+      <div className="rounded-lg bg-[#0F1117] border border-[#262A36] p-6 sm:p-8 overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-white/10 text-xs font-mono uppercase tracking-wider text-slate-400">
-                <th className="py-4 px-4 font-semibold">Evaluation Criterion</th>
-                <th className="py-4 px-4 font-semibold text-slate-500">Generic Consumer LLMs</th>
-                <th className="py-4 px-4 font-semibold text-amber-300 bg-amber-500/5 rounded-t-xl border-x border-t border-amber-500/20">
-                  Vidura-AI Decision Platform
+              <tr className="border-b border-[#262A36] text-xs font-mono uppercase tracking-wider text-slate-300">
+                <th className="py-4 px-4 font-semibold">Evaluation Dimension</th>
+                <th className="py-4 px-4 font-semibold text-slate-300">
+                  Generic Consumer LLMs
+                </th>
+                <th className="py-4 px-4 font-semibold text-amber-300 bg-[#14161F] border-x border-t border-amber-500/30">
+                  Vidura-AI Archival Engine
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-sm">
+            <tbody className="divide-y divide-[#1E222D] text-sm">
               {COMPARISON_DATA.map((row, idx) => (
                 <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="py-4 px-4 font-medium text-white max-w-[220px]">
+                  <td className="py-4 px-4 font-semibold text-[#F3F4F6] max-w-[220px] align-top">
                     {row.criterion}
                   </td>
-                  <td className="py-4 px-4 text-slate-400 max-w-[280px]">
-                    <div className="flex items-start gap-2">
-                      <div className="w-5 h-5 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                        <X className="w-3 h-3 text-red-400" />
+                  <td className="py-4 px-4 text-slate-300 max-w-[280px] align-top">
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-5 h-5 rounded-sm bg-red-950/50 border border-red-500/40 flex items-center justify-center shrink-0 mt-0.5">
+                        <X className="w-3.5 h-3.5 text-red-400" />
                       </div>
                       <span>{row.generic}</span>
                     </div>
                   </td>
-                  <td className="py-4 px-4 text-amber-100 bg-amber-500/5 border-x border-amber-500/20 font-medium">
-                    <div className="flex items-start gap-2">
-                      <div className="w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 text-emerald-400" />
+                  <td className="py-4 px-4 text-amber-100 bg-[#14161F] border-x border-amber-500/30 font-medium align-top">
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-5 h-5 rounded-sm bg-emerald-950/50 border border-emerald-500/40 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
                       </div>
                       <span>{row.vidura}</span>
                     </div>
@@ -104,60 +101,91 @@ export default function ResearchGrounding() {
         </div>
       </div>
 
-      {/* Academic Sources Cards */}
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-panel p-6 rounded-2xl border-amber-500/15 flex flex-col justify-between">
-          <div>
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4">
-              <BookOpen className="w-5 h-5 text-amber-400" />
+      {/* Asymmetric 7:5 Corpus Provenance Split (Replaces generic 3-equal-card row) */}
+      <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        {/* Primary 7-Column Philological Ledger */}
+        <div className="lg:col-span-7 rounded-lg bg-[#0F1117] border border-amber-500/35 p-6 sm:p-8 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-[#262A36] pb-4">
+              <div className="flex items-center gap-2.5">
+                <BookOpen className="w-5 h-5 text-amber-400" />
+                <h3 className="font-serif text-xl font-bold text-[#F3F4F6]">
+                  Primary Manuscript Corpus: Udyoga Parva (Prajāgara Parva)
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-amber-300 px-2.5 py-0.5 rounded-sm bg-[#1A160B] border border-amber-500/30">
+                Adhyāyas 33&ndash;40
+              </span>
             </div>
-            <h3 className="font-serif text-lg font-bold text-white">
-              BORI Critical Edition
-            </h3>
-            <p className="mt-2 text-xs text-slate-300 leading-relaxed font-light">
-              Grounded in the Bhandarkar Oriental Research Institute authoritative edition of the
-              Mahābhārata’s Udyoga Parva (Chapters 33–40), ensuring philological authenticity and zero
-              verse adulteration.
+
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Every Sanskrit shloka in Vidura-AI is indexed from the authoritative Bhandarkar Oriental Research Institute (BORI) Critical Edition of the Mahābhārata and mapped to its exact physical page and vertical bounding-box locus inside the 303-page 1890 Kisari Mohan Ganguli archival print (
+              <code className="text-xs font-mono text-amber-300 bg-[#050608] px-1.5 py-0.5 rounded-sm border border-[#262A36]">
+                public/udyoga_parva.pdf
+              </code>
+              ).
             </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 font-mono text-xs">
+              <div className="p-3 rounded-md bg-[#050608] border border-[#262A36]">
+                <div className="text-slate-400"> § 33.16</div>
+                <div className="text-[#F3F4F6] font-semibold mt-0.5">Folio 111</div>
+                <div className="text-amber-400 text-[11px]">Y = 68.5%</div>
+              </div>
+              <div className="p-3 rounded-md bg-[#050608] border border-[#262A36]">
+                <div className="text-slate-400">§ 33.17</div>
+                <div className="text-[#F3F4F6] font-semibold mt-0.5">Folio 121</div>
+                <div className="text-amber-400 text-[11px]">Y = 20.0%</div>
+              </div>
+              <div className="p-3 rounded-md bg-[#050608] border border-[#262A36]">
+                <div className="text-slate-400">§ 34.29</div>
+                <div className="text-[#F3F4F6] font-semibold mt-0.5">Folio 91</div>
+                <div className="text-amber-400 text-[11px]">Y = 64.0%</div>
+              </div>
+              <div className="p-3 rounded-md bg-[#050608] border border-[#262A36]">
+                <div className="text-slate-400">§ 33.32</div>
+                <div className="text-[#F3F4F6] font-semibold mt-0.5">Folio 83</div>
+                <div className="text-amber-400 text-[11px]">Y = 18.2%</div>
+              </div>
+            </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-white/5 text-[11px] font-mono text-amber-400">
-            Adhyāyas 33–40 &bull; Prajāgara Parva
+
+          <div className="mt-6 pt-4 border-t border-[#262A36] flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-slate-400">
+            <span>OCR-Verified via Windows.Media.Ocr across Folios 79&ndash;135</span>
+            <span className="text-amber-400">Zero Synthetic Citations</span>
           </div>
         </div>
 
-        <div className="glass-panel p-6 rounded-2xl border-cyan-500/15 flex flex-col justify-between">
-          <div>
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-4">
-              <Scale className="w-5 h-5 text-cyan-400" />
+        {/* Secondary 5-Column Stacked Statutory & Evaluation Ledger */}
+        <div className="lg:col-span-5 flex flex-col justify-between gap-6">
+          <div className="rounded-lg bg-[#0F1117] border border-[#262A36] p-6 space-y-3 flex-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Scale className="w-4 h-4 text-amber-400" />
+                <h3 className="font-serif text-lg font-bold text-[#F3F4F6]">
+                  ACM &amp; IEEE Statutory Index
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-slate-400">12 Clauses</span>
             </div>
-            <h3 className="font-serif text-lg font-bold text-white">
-              ACM &amp; IEEE Standards
-            </h3>
-            <p className="mt-2 text-xs text-slate-300 leading-relaxed font-light">
-              Full index of ACM Code of Ethics (Clauses 1.1–4.2) and IEEE Code of Ethics, mapping modern
-              legal compliance and whistleblower protections directly into tactical communication scripts.
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Co-indexes the 2018 ACM Code of Ethics (Clauses 1.1, 1.2, 1.3, 1.4, 2.5, 3.1, 3.7) and the IEEE Code of Ethics (Clauses 1.1, 1.3, 1.5, 3.2, 7.8) to anchor every spoken script in enforceable professional standards.
             </p>
           </div>
-          <div className="mt-4 pt-4 border-t border-white/5 text-[11px] font-mono text-cyan-400">
-            Official 2018 ACM Code &amp; Case Studies
-          </div>
-        </div>
 
-        <div className="glass-panel p-6 rounded-2xl border-amber-500/15 flex flex-col justify-between">
-          <div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4">
-              <Award className="w-5 h-5 text-emerald-400" />
+          <div className="rounded-lg bg-[#0F1117] border border-[#262A36] p-6 space-y-3 flex-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-emerald-400" />
+                <h3 className="font-serif text-lg font-bold text-[#F3F4F6]">
+                  Supabase Evaluation Ledger
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-emerald-400">4 Rubric Axes</span>
             </div>
-            <h3 className="font-serif text-lg font-bold text-white">
-              RAGAS Telemetry Rigor
-            </h3>
-            <p className="mt-2 text-xs text-slate-300 leading-relaxed font-light">
-              Continuous evaluation pipelines evaluating Faithfulness (&gt;0.88), Answer Relevance
-              (&gt;0.92), and Context Precision against adversarial corporate intimidation test cases.
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Records session dilemmas, retrieved shloka coordinates, response latency, and practitioner Likert evaluations across Faithfulness, Answer Relevance, Context Precision, and Tactical Actionability.
             </p>
-          </div>
-          <div className="mt-4 pt-4 border-t border-white/5 text-[11px] font-mono text-emerald-400">
-            Automated Supabase Benchmark Logging
           </div>
         </div>
       </div>

@@ -4,64 +4,66 @@
   :root {
     --bg-obsidian: #08090C;
     --bg-slate-void: #0F1117;
-    --bg-dark-indigo: #141624;
+    --bg-recessed: #050608;
     --gold-burnished: #D4AF37;
     --gold-accent: #F59E0B;
-    --amber-mystic: #D97706;
-    --cyan-ethereal: #06B6D4;
-    --teal-ethereal: #14B8A6;
   }
 
   body {
     background-color: #08090C;
     color: #F3F4F6;
+    font-family: var(--font-sans), system-ui, sans-serif;
     overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: var(--font-serif), Georgia, serif;
+  }
+
+  code, pre, .font-mono {
+    font-family: var(--font-mono), monospace;
+  }
+
+  /* High-contrast keyboard focus ring (WCAG 2.4.7 / R-32: > 9:1 contrast on dark surfaces) */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid #F59E0B;
+    outline-offset: 2px;
   }
 }
 
-/* Glassmorphism & Neumorphism styles */
-.glass-panel {
-  background: rgba(15, 17, 23, 0.72);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(212, 175, 55, 0.18);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(212, 175, 55, 0.12);
+/* Solid Architectural Ledger Surfaces (R-10: Zero backdrop-filter on cards; blur reserved for sticky header & modal overlay) */
+.glass-panel,
+.archival-panel {
+  background-color: #0F1117;
+  border: 1px solid #262A36;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
-.glass-panel-subtle {
-  background: rgba(15, 17, 23, 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.35);
+.glass-panel-subtle,
+.archival-panel-subtle {
+  background-color: #0B0D13;
+  border: 1px solid #1E222D;
 }
 
-.glass-panel-gold {
-  background: radial-gradient(circle at top left, rgba(212, 175, 55, 0.08), rgba(15, 17, 23, 0.85));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(212, 175, 55, 0.28);
-  box-shadow: 0 10px 40px -10px rgba(212, 175, 55, 0.18), inset 0 1px 2px 0 rgba(212, 175, 55, 0.25);
+.glass-panel-gold,
+.archival-panel-gold {
+  background-color: #12131A;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 .glass-panel-cyan {
-  background: radial-gradient(circle at top right, rgba(6, 182, 212, 0.08), rgba(15, 17, 23, 0.85));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(6, 182, 212, 0.25);
-  box-shadow: 0 10px 40px -10px rgba(6, 182, 212, 0.15), inset 0 1px 2px 0 rgba(6, 182, 212, 0.2);
+  background-color: #0F1319;
+  border: 1px solid #26313F;
 }
 
 .gold-gradient-text {
-  background: linear-gradient(135deg, #FFFBEB 0%, #F59E0B 50%, #D4AF37 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.cyan-gradient-text {
-  background: linear-gradient(135deg, #ECFEFF 0%, #06B6D4 50%, #14B8A6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #E5C158;
 }
 
 /* Custom Scrollbars */
@@ -70,14 +72,14 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(8, 9, 12, 0.8);
+  background: #08090C;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, 0.25);
-  border-radius: 9999px;
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.5);
+  background: rgba(212, 175, 55, 0.55);
 }
 
 /* Antique Manuscript Vellum & Carbon Ink Filter */
@@ -92,13 +94,12 @@
   perspective: 1000px;
 }
 
-/* Folio text selection & illumination glow */
+/* Folio text selection & illumination glow (R-13: Single permitted illumination locus) */
 mark.manuscript-glow {
   background-color: rgba(201, 151, 56, 0.35);
   color: #2c1d07;
   border-bottom: 2px solid #a87424;
-  box-shadow: 0 0 12px rgba(201, 151, 56, 0.5);
+  box-shadow: 0 0 12px rgba(201, 151, 56, 0.45);
   border-radius: 2px;
   padding: 1px 3px;
 }
-
