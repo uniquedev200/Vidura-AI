@@ -115,6 +115,16 @@ export default function ChatInterface() {
   const [modelUsed, setModelUsed] = useState<string>("openai/gpt-oss-120b");
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isBookOpen, setIsBookOpen] = useState<boolean>(false);
+  const [codexSeekKey, setCodexSeekKey] = useState<number>(0);
+
+  const handleOpenAndFlipBook = () => {
+    setIsBookOpen(true);
+    setCodexSeekKey((k) => k + 1);
+    setTimeout(() => {
+      const el = document.getElementById("archival-codex-stage");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+  };
 
   // Actions Feedback
   const [scriptCopied, setScriptCopied] = useState<boolean>(false);
@@ -199,6 +209,9 @@ export default function ChatInterface() {
     setRawText("");
     setPillars({ p1: "", p2: "", p3: "", p4: "" });
     setFeedbackSubmitted(false);
+    // Automatically open the 3D Ancient Manuscript Book and trigger flip-to-shloka animation
+    setIsBookOpen(true);
+    setCodexSeekKey((k) => k + 1);
 
     const startTime = performance.now();
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -493,7 +506,7 @@ Machine Learning Engineer
           </div>
 
           <button
-            onClick={() => setIsBookOpen(true)}
+            onClick={handleOpenAndFlipBook}
             className="flex items-center space-x-2 rounded-xl border border-amber-500/50 bg-gradient-to-r from-amber-950/60 to-amber-900/30 px-3.5 py-1.5 text-xs font-serif uppercase tracking-wider text-amber-200 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all cursor-pointer"
           >
             <span>§ Open Archival Codex (Folio {sourceFolio.page_number}) →</span>
@@ -726,6 +739,23 @@ Machine Learning Engineer
             </div>
           </div>
 
+          {/* 3D ANCIENT MANUSCRIPT BOOK VIEWER — OPENS ABOVE THE PILLARS & FLIPS TO VERSE */}
+          <div id="archival-codex-stage">
+            <AncientManuscriptBookViewer
+              inline={true}
+              isOpen={isBookOpen}
+              onClose={() => setIsBookOpen(false)}
+              seekKey={codexSeekKey}
+              pdfUrl="/udyoga_parva.pdf"
+              targetPage={sourceFolio.page_number}
+              highlightText={sourceFolio.highlight_text}
+              verseId={sourceFolio.verse_id}
+              confidenceScore={sourceFolio.confidence_score}
+              sanskritVerse={sourceFolio.highlight_text}
+              englishTranslation={sourceFolio.english_translation}
+            />
+          </div>
+
           {/* VIEW MODE 1: UNIFIED CONTINUOUS ROYAL SŪTRA SCROLL */}
           {viewMode === "scroll" && (
             <div className="glass-panel rounded-3xl p-6 sm:p-10 border-amber-500/30 shadow-2xl relative overflow-hidden">
@@ -734,7 +764,7 @@ Machine Learning Engineer
 
               <PillarRenderer
                 content={rawText || "Dissecting the sovereign dispute and assembling the Four Pillars of Counsel..."}
-                onOpenArchivalCodex={() => setIsBookOpen(true)}
+                onOpenArchivalCodex={handleOpenAndFlipBook}
                 folioNumber={sourceFolio.page_number}
               />
             </div>
@@ -771,15 +801,15 @@ Machine Learning Engineer
                     </h3>
                   </div>
                   <button
-                    onClick={() => setIsBookOpen(true)}
+                    onClick={handleOpenAndFlipBook}
                     className="flex items-center space-x-2 rounded-lg border border-amber-500/50 bg-gradient-to-r from-amber-950/40 to-amber-900/20 px-4 py-2 text-xs font-serif uppercase tracking-wider text-amber-200 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all cursor-pointer"
                   >
-                    <span>§ Open Archival Codex (Folio {sourceFolio.page_number}) →</span>
+                    <span>§ Flip Codex to Folio {sourceFolio.page_number} →</span>
                   </button>
                 </div>
                 <PillarRenderer
                   content={pillars.p2 || "Aligning Vidura Nīti shlokas with ACM and IEEE clauses..."}
-                  onOpenArchivalCodex={() => setIsBookOpen(true)}
+                  onOpenArchivalCodex={handleOpenAndFlipBook}
                   folioNumber={sourceFolio.page_number}
                 />
               </div>
@@ -857,6 +887,25 @@ Machine Learning Engineer
         </div>
       )}
 
+      {/* Standalone 3D Ancient Manuscript Book Viewer if opened before submitting a dilemma */}
+      {!rawText && !isLoading && isBookOpen && (
+        <div id="archival-codex-stage" className="pt-2">
+          <AncientManuscriptBookViewer
+            inline={true}
+            isOpen={isBookOpen}
+            onClose={() => setIsBookOpen(false)}
+            seekKey={codexSeekKey}
+            pdfUrl="/udyoga_parva.pdf"
+            targetPage={sourceFolio.page_number}
+            highlightText={sourceFolio.highlight_text}
+            verseId={sourceFolio.verse_id}
+            confidenceScore={sourceFolio.confidence_score}
+            sanskritVerse={sourceFolio.highlight_text}
+            englishTranslation={sourceFolio.english_translation}
+          />
+        </div>
+      )}
+
       {/* Citations Drawer */}
       <CitationDrawer
         isOpen={isDrawerOpen}
@@ -864,19 +913,6 @@ Machine Learning Engineer
         verses={retrievedVerses}
         ethics={retrievedEthics}
         confidenceScore={confidenceScore}
-      />
-
-      {/* 3D Ancient Manuscript Book Viewer Modal */}
-      <AncientManuscriptBookViewer
-        isOpen={isBookOpen}
-        onClose={() => setIsBookOpen(false)}
-        pdfUrl="/udyoga_parva.pdf"
-        targetPage={sourceFolio.page_number}
-        highlightText={sourceFolio.highlight_text}
-        verseId={sourceFolio.verse_id}
-        confidenceScore={sourceFolio.confidence_score}
-        sanskritVerse={sourceFolio.highlight_text}
-        englishTranslation={sourceFolio.english_translation}
       />
     </div>
   );

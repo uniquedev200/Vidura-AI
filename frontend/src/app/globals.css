@@ -81,7 +81,8 @@
 }
 
 /* Antique Manuscript Vellum & Carbon Ink Filter */
-.parchment-ink-filter canvas {
+.parchment-ink-filter canvas,
+.parchment-ink-filter img {
   mix-blend-mode: multiply;
   filter: sepia(0.50) brightness(0.95) contrast(1.25);
   border-radius: 2px;
