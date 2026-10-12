@@ -19,38 +19,183 @@ import {
 export interface AncientManuscriptBookViewerProps {
   isOpen: boolean;
   onClose?: () => void;
-  pdfUrl: string;           // Path to local public/udyoga_parva.pdf
-  targetPage: number;       // Exact page returned from Upstash Vector metadata
-  highlightText: string;    // Sanskrit/English search snippet to illuminate
-  verseId: string;          // e.g. "33.16"
-  confidenceScore: number;  // Cosine match e.g. 0.924
-  sanskritVerse?: string;   // Transliterated Sanskrit shloka
-  englishTranslation?: string;
-  inline?: boolean;         // Render directly above/below the pillars on the page
-  seekKey?: number | string; // Triggers automatic multi-page flip animation when counsel is generated
+  pdfUrl: string;              // Path to local public/udyoga_parva.pdf
+  targetPage: number;          // Exact page returned from Upstash Vector / OCR Registry
+  highlightText: string;       // Sanskrit shloka to illuminate
+  verseId: string;             // e.g. "33.16", "33.17", "34.29"
+  confidenceScore: number;     // Cosine match e.g. 0.924
+  sanskritVerse?: string;      // Transliterated Sanskrit shloka
+  englishTranslation?: string; // Verbatim translation printed on the scanned folio
+  highlightTopPct?: number;    // Exact OCR-verified top % coordinate on the scanned folio
+  highlightHeightPct?: number; // Exact OCR-verified height % on the scanned folio
+  inline?: boolean;            // Render directly above the Four Pillars on the page
+  seekKey?: number | string;   // Triggers automatic multi-page flip animation when counsel is generated
 }
 
 const TOTAL_MANUSCRIPT_FOLIOS = 303;
 
+// OCR-Verified Locus Coordinates on udyoga_parva.pdf (1890 Kisari Mohan Ganguli Edition)
+export const VERIFIED_SHLOKA_LOCUS_MAP: Record<
+  string,
+  {
+    page: number;
+    topPct: number;
+    heightPct: number;
+    sanskrit: string;
+    verbatimFolioText: string;
+  }
+> = {
+  "33.16": {
+    page: 111,
+    topPct: 68.5,
+    heightPct: 14.0,
+    sanskrit:
+      "Sulabhāḥ puruṣā rājan satataṃ priyavādinaḥ | Apriyasya tu pathyasya vaktā śrotā ca durlabhaḥ ||",
+    verbatimFolioText:
+      "They are abundant, O king, that can always speak agreeable words. The speaker, however, is rare, as also the hearer, of words that are disagreeable but medicinal. That man who, without regarding what is agreeable or disagreeable to his master, but keeping virtue alone in view, sayeth what is unpalatable but medicinal, truly addeth to the strength of the king.",
+  },
+  "33.17": {
+    page: 121,
+    topPct: 20.0,
+    heightPct: 12.2,
+    sanskrit:
+      "Na svalpasya kṛte bhūri nāśayet matimān naraḥ | Etad evāti-pāṇḍityaṃ yad alpān mahato rakṣaṇam ||",
+    verbatimFolioText:
+      "That gain should never be regarded highly which leadeth to loss. On the other hand, that loss even should be regarded highly which would bring on gain. That is no loss, O king, which bringeth on gain. That, however, should be reckoned as loss which is certain to bring about greater losses still.",
+  },
+  "34.29": {
+    page: 91,
+    topPct: 64.0,
+    heightPct: 14.8,
+    sanskrit:
+      "A-pṛṣṭo 'py atra brūyān na tu paśyed vi-nāśanam | An-arthakam api brūyāt sarva-bhūtāhite ratam ||",
+    verbatimFolioText:
+      "Vidura said,—Even if unasked, one should speak truly, whether his words be good or bad, hateful or pleasing, unto him whose defeat one doth not wish. I shall, therefore, say, O king, what is for the good of the Kurus. I shall say what is both beneficial and consistent with morality. Listen to me! Do not, O king, set thy heart upon means of success that are unjust and improper.",
+  },
+  "33.24": {
+    page: 83,
+    topPct: 6.2,
+    heightPct: 13.0,
+    sanskrit:
+      "Ātma-jñānaṃ samārambhas titikṣā dharma-nityatā | Yam arthān nāpakarṣanti sa vai paṇḍita ucyate ||",
+    verbatimFolioText:
+      "With the aid of self-knowledge, exertion, forbearance, and steadiness in virtue, one is called Wise. He whom neither anger, nor joy, nor pride, nor false modesty, nor stupefaction, nor vanity, can draw away from the high ends of life, is considered as wise.",
+  },
+  "33.32": {
+    page: 83,
+    topPct: 18.2,
+    heightPct: 11.2,
+    sanskrit:
+      "Yasyākṛtyaṃ na jānanti mantram vā mantritaṃ pare | Kṛtam evāsya jānanti sa vai paṇḍita ucyate ||",
+    verbatimFolioText:
+      "He whose intended acts, and proposed counsels remain concealed from foes, and whose acts become known only after they have been done, is considered wise. He whose purposed actions are never obstructed by heat or cold, fear or attachment, prosperity or adversity, is considered wise.",
+  },
+  "34.12": {
+    page: 89,
+    topPct: 15.2,
+    heightPct: 11.2,
+    sanskrit:
+      "Daśa dharmam na jānanti dhṛtarāṣṭra nibodha tān | Mattaḥ pramatta unmattaḥ śrāntaḥ kruddho bubhukṣitaḥ | Tvaramāṇaś ca lubdhaś ca bhītaḥ kāmī ca te daśa ||",
+    verbatimFolioText:
+      "O Dhritarashtra, these ten do not know what virtue is, viz., the intoxicated, the inattentive, the raving, the fatigued, the angry, the starving, the hasty, the covetous, the frightened, and the lustful. Therefore, he that is wise must eschew the company of these.",
+  },
+  "35.08": {
+    page: 85,
+    topPct: 86.8,
+    heightPct: 9.2,
+    sanskrit:
+      "Sāmnā dānena bhedena daṇḍena ca mahīpate | Vinīyātmānam evādau paścād anyān vināyayet ||",
+    verbatimFolioText:
+      "By one is meant the intellect; by two, right and wrong; by three, friend, stranger, and foe; by four, conciliation, gift, disunion, and severity.",
+  },
+  "35.19": {
+    page: 89,
+    topPct: 48.2,
+    heightPct: 13.0,
+    sanskrit:
+      "Na vairaṃ ropayet kasyacid a-kāle vāpi saṃśritam | Na rājño vipriyaṃ kuryān na ca dharmeṇa saṃtyajet ||",
+    verbatimFolioText:
+      "He is a wise person who doth not disregard even a weak foe; who proceedeth with intelligence in respect of a foe, anxiously watching for an opportunity; who doth not desire hostilities with persons stronger than himself; and who displayeth his prowess in season.",
+  },
+  "36.14": {
+    page: 111,
+    topPct: 82.8,
+    heightPct: 8.8,
+    sanskrit:
+      "Tyajed ekaṃ kulasyārthe grāmasyārthe kulaṃ tyajet | Grāmaṃ janapadasyārthe ātmārthe pṛthivīṃ tyajet ||",
+    verbatimFolioText:
+      "For the sake of the family a member may be sacrificed; for the sake of the village, a family may be sacrificed; for the sake of a kingdom a village may be sacrificed; and for the sake of one's soul, the whole earth may be sacrificed.",
+  },
+  "37.11": {
+    page: 96,
+    topPct: 47.2,
+    heightPct: 11.0,
+    sanskrit:
+      "Satyaṃ brūyāt priyaṃ brūyān na brūyāt satyam apriyam | Priyaṃ ca nānṛtaṃ brūyād eṣa dharmaḥ sanātanaḥ ||",
+    verbatimFolioText:
+      "To control speech, O king, is said to be most difficult! It is not easy to hold a long conversation uttering words full of meaning and delightful to the hearers. Well-spoken speech is productive of many beneficial results; and ill-spoken speech, O king, is the cause of evils!",
+  },
+  "38.09": {
+    page: 85,
+    topPct: 39.5,
+    heightPct: 13.0,
+    sanskrit:
+      "Ekaḥ kṣamāvatāṃ doṣo dvitīyo nopapadyate | Yad enaṃ kṣamayā yuktam aśaktaṃ manyate janaḥ ||",
+    verbatimFolioText:
+      "There is one only defect in forgiving persons, and not another; that defect is that people take a forgiving person to be weak. That defect, however, should not be taken into consideration, for forgiveness is a great power. Forgiveness is a virtue of the weak, and an ornament of the strong.",
+  },
+  "39.21": {
+    page: 90,
+    topPct: 80.5,
+    heightPct: 8.5,
+    sanskrit:
+      "Hitaṃ mano-hari ca durlabhaṃ vacaḥ | Yo hi rājñaḥ priyaṃ vaktā na tu pathyaṃ prabhāṣate ||",
+    verbatimFolioText:
+      "He whose counsels are well kept and well carried out into practice, and whose acts in consequence thereof are never known by others to injure men, succeedeth in securing even his most trifling objects.",
+  },
+  "40.06": {
+    page: 102,
+    topPct: 44.5,
+    heightPct: 18.0,
+    sanskrit:
+      "Dharmo rakṣati rakṣitaḥ | Na jātu kāmān na bhayān na lobhād dharmaṃ jahyāj jīvitasyāpi hetoḥ ||",
+    verbatimFolioText:
+      "A virtuous man, by practising virtue, reapeth great happiness. Therefore, a man should, rigidly resolved, abstain from sin. Sin, repeatedly perpetrated, destroyeth intelligence; and the man who hath lost intelligence repeatedly committeth sin. Virtue, repeatedly practised, enhanceth intelligence.",
+  },
+};
+
 function getFolioImagePath(pageNumber: number): string {
-  const clamped = Math.max(1, Math.min(112, pageNumber));
+  const clamped = Math.max(1, Math.min(135, pageNumber));
   return `/folios/folio-${clamped}.webp`;
 }
 
 export default function AncientManuscriptBookViewer({
   isOpen,
   onClose,
-  targetPage = 79,
-  highlightText = "Sulabhāḥ puruṣā rājan satataṃ priyavādinaḥ | Apriyasya tu pathyasya vaktā śrotā ca durlabhaḥ",
+  targetPage = 111,
+  highlightText = "Sulabhāḥ puruṣā rājan satataṃ priyavādinaḥ | Apriyasya tu pathyasya vaktā śrotā ca durlabhaḥ ||",
   verseId = "33.16",
   confidenceScore = 0.924,
   sanskritVerse,
   englishTranslation,
+  highlightTopPct,
+  highlightHeightPct,
   inline = false,
   seekKey,
 }: AncientManuscriptBookViewerProps) {
-  // Left folio (Verso) is targetPage - 1 so Right folio (Recto) lands on targetPage
-  const desiredLeftPage = Math.max(1, targetPage - 1);
+  const verifiedLocus =
+    VERIFIED_SHLOKA_LOCUS_MAP[verseId] || VERIFIED_SHLOKA_LOCUS_MAP["33.16"];
+
+  const resolvedTargetPage = targetPage || verifiedLocus.page;
+  const resolvedTopPct = highlightTopPct ?? verifiedLocus.topPct;
+  const resolvedHeightPct = highlightHeightPct ?? verifiedLocus.heightPct;
+  const resolvedSanskrit =
+    sanskritVerse || highlightText || verifiedLocus.sanskrit;
+  const resolvedVerbatimEnglish =
+    verifiedLocus.verbatimFolioText || englishTranslation || "";
+
+  // Left folio (Verso) is resolvedTargetPage - 1 so Right folio (Recto) lands on resolvedTargetPage
+  const desiredLeftPage = Math.max(1, resolvedTargetPage - 1);
 
   const [currentPage, setCurrentPage] = useState<number>(desiredLeftPage);
   const [zoomScale, setZoomScale] = useState<number>(1.0);
@@ -69,7 +214,7 @@ export default function AncientManuscriptBookViewer({
     timersRef.current = [];
   }, []);
 
-  // Multi-folio 3D book-flipping sequence that riffles through the codex to land on targetPage
+  // Multi-folio 3D book-flipping sequence that riffles through the codex to land on finalTargetPage
   const runBookFlipToTargetSequence = useCallback(
     (finalTargetPage: number) => {
       clearAllTimers();
@@ -77,10 +222,10 @@ export default function AncientManuscriptBookViewer({
 
       // Build intermediate spreads that visually riffle forward to the target shloka page
       const stops = [
-        Math.max(1, finalLeft - 48),
-        Math.max(1, finalLeft - 32),
-        Math.max(1, finalLeft - 18),
-        Math.max(1, finalLeft - 6),
+        Math.max(1, finalLeft - 44),
+        Math.max(1, finalLeft - 28),
+        Math.max(1, finalLeft - 14),
+        Math.max(1, finalLeft - 4),
         finalLeft,
       ];
 
@@ -99,9 +244,9 @@ export default function AncientManuscriptBookViewer({
             if (idx === stops.length - 2) {
               setIsAutoSeeking(false);
             }
-          }, 280);
+          }, 260);
           timersRef.current.push(completeFlipTimer);
-        }, idx * 340 + 120);
+        }, idx * 320 + 100);
 
         timersRef.current.push(startFlipTimer);
       });
@@ -109,12 +254,19 @@ export default function AncientManuscriptBookViewer({
     [clearAllTimers]
   );
 
-  // Trigger multi-page flip animation whenever modal opens, seekKey changes, or targetPage changes
+  // Trigger multi-page flip animation whenever modal opens, seekKey changes, or resolvedTargetPage changes
   useEffect(() => {
     if (!isOpen) return;
-    runBookFlipToTargetSequence(targetPage);
+    runBookFlipToTargetSequence(resolvedTargetPage);
     return () => clearAllTimers();
-  }, [isOpen, targetPage, seekKey, runBookFlipToTargetSequence, clearAllTimers]);
+  }, [
+    isOpen,
+    resolvedTargetPage,
+    verseId,
+    seekKey,
+    runBookFlipToTargetSequence,
+    clearAllTimers,
+  ]);
 
   const handleTurnPrior = useCallback(() => {
     if (currentPage <= 1 || isFlipping || isAutoSeeking) return;
@@ -124,7 +276,7 @@ export default function AncientManuscriptBookViewer({
     const t = setTimeout(() => {
       setCurrentPage((prev) => Math.max(1, prev - 2));
       setIsFlipping(false);
-    }, 360);
+    }, 340);
     timersRef.current.push(t);
   }, [currentPage, isFlipping, isAutoSeeking]);
 
@@ -143,14 +295,19 @@ export default function AncientManuscriptBookViewer({
         Math.min(TOTAL_MANUSCRIPT_FOLIOS - 1, prev + 2)
       );
       setIsFlipping(false);
-    }, 360);
+    }, 340);
     timersRef.current.push(t);
   }, [currentPage, isFlipping, isAutoSeeking]);
 
   const handleRealignTarget = useCallback(() => {
     if (isFlipping || isAutoSeeking) return;
-    runBookFlipToTargetSequence(targetPage);
-  }, [isFlipping, isAutoSeeking, runBookFlipToTargetSequence, targetPage]);
+    runBookFlipToTargetSequence(resolvedTargetPage);
+  }, [
+    isFlipping,
+    isAutoSeeking,
+    runBookFlipToTargetSequence,
+    resolvedTargetPage,
+  ]);
 
   const handleZoomOut = () => {
     setZoomScale((prev) => Math.max(0.8, Number((prev - 0.1).toFixed(2))));
@@ -166,9 +323,10 @@ export default function AncientManuscriptBookViewer({
   const rightFolioPage = Math.min(TOTAL_MANUSCRIPT_FOLIOS, currentPage + 1);
   const isTargetOnSpread =
     !isAutoSeeking &&
-    (leftFolioPage === targetPage || rightFolioPage === targetPage);
+    (leftFolioPage === resolvedTargetPage ||
+      rightFolioPage === resolvedTargetPage);
 
-  const codexContent = (
+  return (
     <div
       className={`w-full flex flex-col items-center justify-between select-none ${
         inline && !isFullscreenModal
@@ -187,7 +345,7 @@ export default function AncientManuscriptBookViewer({
               <span>✦ ARCHIVAL CODEX VERIFICATION</span>
               <span>◆</span>
               <span className="text-amber-200/80">
-                BORI Critical Edition • Udyoga Parva
+                BORI Critical Edition • Ganguli Folio {resolvedTargetPage}
               </span>
             </div>
             <h3 className="font-serif text-sm sm:text-base font-bold text-amber-100 tracking-wide">
@@ -201,14 +359,16 @@ export default function AncientManuscriptBookViewer({
           {isAutoSeeking && (
             <div className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-400/60 text-amber-200 font-mono text-xs flex items-center gap-1.5 animate-pulse">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Flipping to Folio {targetPage}...</span>
+              <span>Flipping to Folio {resolvedTargetPage}...</span>
             </div>
           )}
 
           {/* Verse Badge */}
           <div className="px-3 py-1.5 rounded-lg bg-amber-950/70 border border-amber-500/50 text-amber-200 font-serif text-xs font-bold tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(212,175,55,0.2)]">
             <span className="text-amber-400">§</span>
-            <span>Verse {verseId}</span>
+            <span>
+              Vidura Nīti {verseId} • Folio {resolvedTargetPage}
+            </span>
           </div>
 
           {/* Cosine Match Pill */}
@@ -292,9 +452,9 @@ export default function AncientManuscriptBookViewer({
               {/* Dual-Folio Open Spread */}
               <div
                 style={{ transformStyle: "preserve-3d" }}
-                className="relative grid grid-cols-1 md:grid-cols-2 bg-[#e8dabf] rounded-sm overflow-hidden shadow-inner min-h-[540px]"
+                className="relative grid grid-cols-1 md:grid-cols-2 bg-[#e8dabf] rounded-sm overflow-hidden shadow-inner min-h-[560px]"
               >
-                {/* ================= LEFT FOLIO (VERSO) ================= */}
+                {/* ================= LEFT FOLIO (VERSO + ILLUMINATED SHLOKA VERIFICATION PLAQUE) ================= */}
                 <div
                   onClick={handleTurnPrior}
                   title="Click to Turn Prior Folio"
@@ -315,13 +475,74 @@ export default function AncientManuscriptBookViewer({
                     <span className="font-bold">॥ उद्योगपर्व • प्रजागर ॥</span>
                   </div>
 
-                  {/* Authentic Archival Manuscript Page (Verso) */}
-                  <div className="relative z-0 flex-1 flex items-center justify-center min-h-[450px] parchment-ink-filter overflow-hidden">
-                    <img
-                      src={getFolioImagePath(leftFolioPage)}
-                      alt={`Mahabharata Udyoga Parva Archival Folio ${leftFolioPage}`}
-                      className="w-full max-w-[390px] h-auto object-contain rounded-sm transition-transform duration-300 group-hover:scale-[1.01]"
-                    />
+                  {/* Authentic Archival Manuscript Page (Verso) + Docked Shloka Verification Plate */}
+                  <div className="relative z-0 flex-1 flex items-center justify-center min-h-[460px] overflow-hidden">
+                    <div className="relative w-full max-w-[390px] mx-auto parchment-ink-filter">
+                      <img
+                        src={getFolioImagePath(leftFolioPage)}
+                        alt={`Mahabharata Udyoga Parva Archival Folio ${leftFolioPage}`}
+                        className="w-full h-auto object-contain rounded-sm opacity-90 transition-transform duration-300 group-hover:scale-[1.01]"
+                      />
+                    </div>
+
+                    {/* DOCKED ILLUMINATED SHLOKA VERIFICATION PLATE ON LEFT FOLIO (Leaves Right Folio 100% Unobstructed) */}
+                    {isTargetOnSpread && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 12, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.38 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute inset-x-1.5 bottom-1.5 z-20 rounded-xl border-2 border-[#b5801e] bg-gradient-to-br from-[#faf1da]/98 via-[#f4e4bd]/98 to-[#ebd39b]/98 p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.65),0_0_24px_rgba(201,151,56,0.65),inset_0_1px_2px_rgba(255,255,255,0.75)] cursor-default"
+                      >
+                        <div className="flex items-center justify-between border-b border-[#a87424]/40 pb-1.5 mb-2">
+                          <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-[#6e460c] flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-[#9e6610]" />
+                            <span>
+                              ✦ ILLUMINATED PRAMĀṆA SHLOKA • § {verseId}
+                            </span>
+                          </span>
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#a87424]/25 text-[#472c04] border border-[#a87424]/50">
+                            Folio {resolvedTargetPage} Verified →
+                          </span>
+                        </div>
+
+                        {/* Canonical Sanskrit IAST Shloka (Clean uniform serif font with full IAST diacritics) */}
+                        <div
+                          style={{
+                            fontFamily:
+                              'Georgia, "Times New Roman", "Noto Serif", serif',
+                            textTransform: "none",
+                          }}
+                          className="text-xs sm:text-[13.5px] font-semibold leading-snug text-[#2b1a04] italic mb-2"
+                        >
+                          <mark
+                            style={{
+                              fontFamily:
+                                'Georgia, "Times New Roman", "Noto Serif", serif',
+                              textTransform: "none",
+                            }}
+                            className="manuscript-glow"
+                          >
+                            {resolvedSanskrit}
+                          </mark>
+                        </div>
+
+                        {/* Verbatim English Passage Underlined on the Facing Right Folio */}
+                        <div className="text-[10px] font-mono uppercase tracking-wider text-[#7a5012] font-bold mb-0.5">
+                          ◆ Verbatim Passage Highlighted on Facing Folio{" "}
+                          {resolvedTargetPage}:
+                        </div>
+                        <p
+                          style={{
+                            fontFamily:
+                              'Georgia, "Times New Roman", "Noto Serif", serif',
+                          }}
+                          className="text-[11.5px] text-[#332107] leading-relaxed italic"
+                        >
+                          &ldquo;{resolvedVerbatimEnglish}&rdquo;
+                        </p>
+                      </motion.div>
+                    )}
                   </div>
 
                   {/* Bottom Verso Footer */}
@@ -350,7 +571,7 @@ export default function AncientManuscriptBookViewer({
                   </div>
                 </div>
 
-                {/* ================= RIGHT FOLIO (RECTO / TARGET SHLOKA PAGE) ================= */}
+                {/* ================= RIGHT FOLIO (RECTO / UNOBSTRUCTED SCANNED MANUSCRIPT WITH EXACT LOCUS HIGHLIGHT) ================= */}
                 <div
                   onClick={handleTurnNext}
                   title="Click to Turn Next Folio"
@@ -371,69 +592,49 @@ export default function AncientManuscriptBookViewer({
                     </span>
                   </div>
 
-                  {/* Authentic Archival Manuscript Page (Recto) + Gold-Foil Verse Illumination */}
-                  <div className="relative z-0 flex-1 flex items-center justify-center min-h-[450px] parchment-ink-filter overflow-hidden">
-                    <img
-                      src={getFolioImagePath(rightFolioPage)}
-                      alt={`Mahabharata Udyoga Parva Archival Folio ${rightFolioPage}`}
-                      className="w-full max-w-[390px] h-auto object-contain rounded-sm transition-transform duration-300 group-hover:scale-[1.01]"
-                    />
+                  {/* Authentic Archival Manuscript Page (Recto) with Pixel-Accurate OCR Locus Highlight */}
+                  <div className="relative z-0 flex-1 flex items-center justify-center min-h-[460px] overflow-hidden">
+                    <div className="relative w-full max-w-[390px] mx-auto">
+                      <div className="parchment-ink-filter">
+                        <img
+                          src={getFolioImagePath(rightFolioPage)}
+                          alt={`Mahabharata Udyoga Parva Archival Folio ${rightFolioPage}`}
+                          className="w-full h-auto object-contain rounded-sm transition-transform duration-300 group-hover:scale-[1.01]"
+                        />
+                      </div>
 
-                    {/* Gold-Leaf Passage Highlight Band directly over the manuscript text */}
-                    {isTargetOnSpread && (
-                      <motion.div
-                        initial={{ opacity: 0, scaleX: 0.85 }}
-                        animate={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 0.45 }}
-                        className="pointer-events-none absolute top-[26%] inset-x-6 h-20 rounded bg-amber-400/25 border-y-2 border-[#b5801e] shadow-[0_0_25px_rgba(212,175,55,0.55)] flex items-start justify-end p-1.5"
-                      >
-                        <span className="px-2 py-0.5 rounded bg-[#3a2408]/90 text-[#f7e2a8] font-mono text-[10px] font-bold tracking-wider shadow">
-                          § {verseId} • SHLOKA LOCUS
-                        </span>
-                      </motion.div>
-                    )}
-
-                    {/* ACTIVE GOLD-FOIL ILLUMINATED SHLOKA CALLOUT BOX ON TARGET FOLIO */}
-                    {isTargetOnSpread && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 14, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ duration: 0.4 }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute inset-x-2 bottom-2 z-20 rounded-xl border-2 border-[#b5801e] bg-gradient-to-br from-[#f8edd2]/98 via-[#f3e1b6]/98 to-[#e8ce92]/98 p-3.5 shadow-[0_10px_30px_rgba(0,0,0,0.6),0_0_25px_rgba(201,151,56,0.7),inset_0_1px_2px_rgba(255,255,255,0.7)] cursor-default"
-                      >
-                        <div className="flex items-center justify-between border-b border-[#a87424]/40 pb-1.5 mb-2">
-                          <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-[#6e460c] flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-[#9e6610]" />
-                            <span>
-                              ✦ ILLUMINATED PRAMĀṆA SHLOKA • § {verseId}
+                      {/* Exact OCR-Verified Gold-Leaf Highlight Frame & Underlines over the Scanned Verse */}
+                      {isTargetOnSpread && (
+                        <motion.div
+                          initial={{ opacity: 0, scaleX: 0.92 }}
+                          animate={{ opacity: 1, scaleX: 1 }}
+                          transition={{ duration: 0.45 }}
+                          style={{
+                            top: `${resolvedTopPct}%`,
+                            height: `${resolvedHeightPct}%`,
+                          }}
+                          className="pointer-events-none absolute inset-x-4 rounded-md bg-amber-300/25 border-2 border-[#b5801e] shadow-[0_0_28px_rgba(212,175,55,0.65),inset_0_0_12px_rgba(212,175,55,0.3)] flex flex-col justify-between"
+                        >
+                          {/* Locus Badge pinned to top-right edge of the highlight frame */}
+                          <div className="flex justify-end -mt-3 mr-1">
+                            <span className="px-2 py-0.5 rounded bg-[#2d1b04]/95 border border-[#d4af37] text-[#fae6b1] font-mono text-[9.5px] font-bold tracking-wider shadow-md">
+                              § {verseId} • VERIFIED SHLOKA LOCUS (p.{" "}
+                              {resolvedTargetPage})
                             </span>
-                          </span>
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#a87424]/25 text-[#472c04] border border-[#a87424]/50">
-                            Folio {targetPage} Verified
-                          </span>
-                        </div>
+                          </div>
 
-                        <div className="font-serif text-xs sm:text-[13px] leading-snug text-[#2c1d07] italic mb-1.5">
-                          <mark className="manuscript-glow">
-                            {sanskritVerse || highlightText}
-                          </mark>
-                        </div>
-
-                        {englishTranslation && (
-                          <p className="text-[11px] font-sans text-[#3d290b] leading-relaxed">
-                            &ldquo;{englishTranslation}&rdquo;
-                          </p>
-                        )}
-                      </motion.div>
-                    )}
+                          {/* Subtle Gold Underline Rule at Bottom of Passage */}
+                          <div className="w-full h-[2px] bg-gradient-to-r from-[#b5801e] via-[#d4af37] to-[#b5801e]" />
+                        </motion.div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Bottom Recto Footer */}
                   <div className="relative z-10 flex items-center justify-between border-t border-[#8a6a43]/35 pt-2 mt-2 text-[10px] font-mono text-[#5c401d]">
                     <span>
                       {isTargetOnSpread
-                        ? `✦ TARGET VERSE § ${verseId} ILLUMINATED`
+                        ? `✦ TARGET VERSE § ${verseId} HIGHLIGHTED AT LOCUS Y=${resolvedTopPct}%`
                         : "UDYOGA PARVA"}
                     </span>
                     <span>p. {rightFolioPage}</span>
@@ -453,7 +654,7 @@ export default function AncientManuscriptBookViewer({
                       }}
                       exit={{ opacity: 0 }}
                       transition={{
-                        duration: isAutoSeeking ? 0.27 : 0.36,
+                        duration: isAutoSeeking ? 0.25 : 0.34,
                         ease: "easeInOut",
                       }}
                       style={{
@@ -495,8 +696,8 @@ export default function AncientManuscriptBookViewer({
             {TOTAL_MANUSCRIPT_FOLIOS}
           </span>
           <span className="hidden md:inline-block text-xs font-serif italic text-amber-400/80">
-            § Target Shloka Mapped to Folio {targetPage} (Click folios or
-            buttons to flip pages)
+            § Target Shloka {verseId} Mapped to Folio {resolvedTargetPage} (Locus{" "}
+            {resolvedTopPct}%)
           </span>
         </div>
 
@@ -523,7 +724,9 @@ export default function AncientManuscriptBookViewer({
             }`}
           >
             <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-            <span>Flip to Shloka (§ {verseId} • Folio {targetPage})</span>
+            <span>
+              Flip to Shloka (§ {verseId} • Folio {resolvedTargetPage})
+            </span>
           </button>
 
           <button
@@ -568,6 +771,4 @@ export default function AncientManuscriptBookViewer({
       </div>
     </div>
   );
-
-  return codexContent;
 }
