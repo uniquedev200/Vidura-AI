@@ -2,12 +2,12 @@ from typing import List, Optional, Any, Dict
 from pydantic import BaseModel, Field
 
 class DilemmaRequest(BaseModel):
-    dilemma: str = Field(..., description="The ethical workplace or algorithmic dilemma description")
-    role: str = Field(default="Senior Software Engineer", description="User's professional role")
-    counterparty: Optional[str] = Field(default="VP of Product / Executive Leadership", description="Opposing party or manager exerting pressure")
-    organizational_pressure: str = Field(default="Critical Deadline & Revenue Threat", description="Nature and intensity of organizational pressure")
-    risk_level: str = Field(default="High (Career & Systemic Harm)", description="Risk severity level")
-    primary_fear: Optional[str] = Field(default="Retaliation & Career Blacklisting", description="User's primary fear or vulnerability")
+    dilemma: str = Field(..., description="The ethical workplace, engineering, or governance dilemma description")
+    role: str = Field(default="", description="User's professional role")
+    counterparty: str = Field(default="", description="Opposing party or decision-maker exerting pressure")
+    organizational_pressure: str = Field(default="", description="Nature and intensity of organizational pressure or mandate")
+    risk_level: str = Field(default="High", description="Risk severity level")
+    primary_fear: str = Field(default="", description="User's primary fear or retaliation vulnerability")
     stream: Optional[bool] = Field(default=True, description="Whether to stream the response via SSE")
 
 class VerseCitation(BaseModel):
@@ -23,7 +23,7 @@ class VerseCitation(BaseModel):
 
 class EthicsCitation(BaseModel):
     id: str
-    organization: str # "ACM" or "IEEE"
+    organization: str
     clause: str
     title: str
     text: str

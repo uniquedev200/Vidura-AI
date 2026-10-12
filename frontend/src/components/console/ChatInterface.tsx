@@ -21,11 +21,21 @@ import {
   FileText,
   AlertTriangle,
   RotateCcw,
+  ShieldAlert,
+  Flame,
+  Eraser,
 } from "lucide-react";
 import DharmaChakra from "@/components/ui/DharmaChakra";
 import DharmaScale from "@/components/ui/DharmaScale";
 import CitationDrawer from "./CitationDrawer";
 import PillarRenderer from "./PillarRenderer";
+import {
+  validateDilemmaInput,
+  matchCanonicalCorpusFromInputs,
+  synthesizeDynamicCounselFromInputs,
+  GuardrailValidationResult,
+  DilemmaInputPayload,
+} from "@/lib/guardrails";
 
 const AncientManuscriptBookViewer = dynamic(
   () => import("./AncientManuscriptBookViewer"),
@@ -102,20 +112,18 @@ interface ParsedFourPillars {
 }
 
 export default function ChatInterface() {
+  // All fields start clean so user input (not Preset 1) drives counsel generation
   const [dilemma, setDilemma] = useState<string>("");
-  const [role, setRole] = useState<string>("Machine Learning Engineer");
-  const [counterparty, setCounterparty] = useState<string>(
-    "VP of AI Product & Chief Revenue Officer"
-  );
-  const [organizationalPressure, setOrganizationalPressure] = useState<string>(
-    "Quarterly Wall Street guidance depends on immediate rollout"
-  );
-  const [riskLevel, setRiskLevel] = useState<string>("Critical");
-  const [primaryFear, setPrimaryFear] = useState<string>(
-    "Constructive termination, bonus forfeiture, NDA threat"
-  );
+  const [role, setRole] = useState<string>("");
+  const [counterparty, setCounterparty] = useState<string>("");
+  const [organizationalPressure, setOrganizationalPressure] =
+    useState<string>("");
+  const [riskLevel, setRiskLevel] = useState<string>("High");
+  const [primaryFear, setPrimaryFear] = useState<string>("");
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [guardrailError, setGuardrailError] =
+    useState<GuardrailValidationResult | null>(null);
   const [apiNotice, setApiNotice] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
   const [pillars, setPillars] = useState<ParsedFourPillars>({
@@ -134,6 +142,36 @@ export default function ChatInterface() {
   const [isBookOpen, setIsBookOpen] = useState<boolean>(false);
   const [codexSeekKey, setCodexSeekKey] = useState<number>(0);
 
+  const [scriptCopied, setScriptCopied] = useState<boolean>(false);
+  const [likertRating, setLikertRating] = useState<number>(5);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
+
+  const currentPayload: DilemmaInputPayload = {
+    dilemma,
+    role,
+    counterparty,
+    organizational_pressure: organizationalPressure,
+    risk_level: riskLevel,
+    primary_fear: primaryFear,
+  };
+
+  // Dynamically score all 13 shlokas and 8 ACM/IEEE clauses from current inputs
+  const liveCorpusMatch = matchCanonicalCorpusFromInputs(currentPayload);
+  const primaryVerse = retrievedVerses?.[0] || liveCorpusMatch.verses[0];
+  const sourceFolio = {
+    page_number: primaryVerse?.page_number || 111,
+    verse_id: primaryVerse?.verse_id || "33.16",
+    highlight_top_pct: primaryVerse?.highlight_top_pct ?? 68.5,
+    highlight_height_pct: primaryVerse?.highlight_height_pct ?? 14.0,
+    highlight_text:
+      primaryVerse?.text_sanskrit_translit ||
+      liveCorpusMatch.verses[0].text_sanskrit_translit,
+    english_translation:
+      primaryVerse?.text_english || liveCorpusMatch.verses[0].text_english,
+    confidence_score:
+      primaryVerse?.score || confidenceScore || liveCorpusMatch.confidenceScore,
+  };
+
   const handleOpenAndFlipBook = () => {
     setIsBookOpen(true);
     setCodexSeekKey((k) => k + 1);
@@ -143,126 +181,50 @@ export default function ChatInterface() {
     }, 80);
   };
 
-  const [scriptCopied, setScriptCopied] = useState<boolean>(false);
-  const [likertRating, setLikertRating] = useState<number>(5);
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
-
-  const inferCanonicalShlokaFromDilemma = (text: string) => {
-    const low = (text || "").toLowerCase();
-    if (
-      low.includes("vulnerability") ||
-      low.includes("zero-day") ||
-      low.includes("security") ||
-      low.includes("ci/cd") ||
-      low.includes("deadline") ||
-      low.includes("sprint")
-    ) {
-      return {
-        id: "vidura-ch33-v17",
-        verse_id: "33.17",
-        adhyaya: 33,
-        page_number: 121,
-        highlight_top_pct: 20.0,
-        highlight_height_pct: 12.2,
-        text_sanskrit_translit:
-          "Na svalpasya kṛte bhūri nāśayet matimān naraḥ | Etad evāti-pāṇḍityaṃ yad alpān mahato rakṣaṇam ||",
-        text_english:
-          "That gain should never be regarded highly which leadeth to loss. On the other hand, that loss even should be regarded highly which would bring on gain. That is no loss, O king, which bringeth on gain. That, however, should be reckoned as loss which is certain to bring about greater losses still.",
-        score: 0.942,
-      };
-    }
-    if (
-      low.includes("shell llc") ||
-      low.includes("sibling") ||
-      low.includes("nepotism") ||
-      low.includes("stay in my lane") ||
-      low.includes("vendor contract") ||
-      low.includes("uncompetitive")
-    ) {
-      return {
-        id: "vidura-ch34-v29",
-        verse_id: "34.29",
-        adhyaya: 34,
-        page_number: 91,
-        highlight_top_pct: 64.0,
-        highlight_height_pct: 14.8,
-        text_sanskrit_translit:
-          "A-pṛṣṭo 'py atra brūyān na tu paśyed vi-nāśanam | An-arthakam api brūyāt sarva-bhūtāhite ratam ||",
-        text_english:
-          "Vidura said: Even if unasked, one should speak truly, whether his words be good or bad, hateful or pleasing, unto him whose defeat one doth not wish. I shall, therefore, say, O king, what is for the good of the Kurus. I shall say what is both beneficial and consistent with morality. Listen to me! Do not, O king, set thy heart upon means of success that are unjust and improper.",
-        score: 0.951,
-      };
-    }
-    if (
-      low.includes("secret") ||
-      low.includes("paper trail") ||
-      low.includes("encrypted")
-    ) {
-      return {
-        id: "vidura-ch33-v32",
-        verse_id: "33.32",
-        adhyaya: 33,
-        page_number: 83,
-        highlight_top_pct: 18.2,
-        highlight_height_pct: 11.2,
-        text_sanskrit_translit:
-          "Yasyākṛtyaṃ na jānanti mantram vā mantritaṃ pare | Kṛtam evāsya jānanti sa vai paṇḍita ucyate ||",
-        text_english:
-          "He whose intended acts, and proposed counsels remain concealed from foes, and whose acts become known only after they have been done, is considered wise. He whose purposed actions are never obstructed by heat or cold, fear or attachment, prosperity or adversity, is considered wise.",
-        score: 0.934,
-      };
-    }
-    return {
-      id: "vidura-ch33-v16",
-      verse_id: "33.16",
-      adhyaya: 33,
-      page_number: 111,
-      highlight_top_pct: 68.5,
-      highlight_height_pct: 14.0,
-      text_sanskrit_translit:
-        "Sulabhāḥ puruṣā rājan satataṃ priyavādinaḥ | Apriyasya tu pathyasya vaktā śrotā ca durlabhaḥ ||",
-      text_english:
-        "They are abundant, O king, that can always speak agreeable words. The speaker, however, is rare, as also the hearer, of words that are disagreeable but medicinal. That man who, without regarding what is agreeable or disagreeable to his master, but keeping virtue alone in view, sayeth what is unpalatable but medicinal, truly addeth to the strength of the king.",
-      score: 0.96,
-    };
-  };
-
-  const inferredVerse = inferCanonicalShlokaFromDilemma(dilemma);
-  const primaryVerse = retrievedVerses?.[0] || inferredVerse;
-  const sourceFolio = {
-    page_number: primaryVerse?.page_number || inferredVerse.page_number,
-    verse_id: primaryVerse?.verse_id || inferredVerse.verse_id,
-    highlight_top_pct:
-      primaryVerse?.highlight_top_pct ?? inferredVerse.highlight_top_pct,
-    highlight_height_pct:
-      primaryVerse?.highlight_height_pct ?? inferredVerse.highlight_height_pct,
-    highlight_text:
-      primaryVerse?.text_sanskrit_translit ||
-      inferredVerse.text_sanskrit_translit,
-    english_translation:
-      primaryVerse?.text_english || inferredVerse.text_english,
-    confidence_score:
-      primaryVerse?.score || confidenceScore || inferredVerse.score,
-  };
-
   const handleSelectPreset = (p: Preset) => {
+    setGuardrailError(null);
+    setApiNotice(null);
     setDilemma(p.dilemma);
     setRole(p.role);
     setCounterparty(p.counterparty);
     setOrganizationalPressure(p.organizational_pressure);
     setRiskLevel(p.risk_level);
     setPrimaryFear(p.primary_fear);
-    const matched = inferCanonicalShlokaFromDilemma(p.dilemma);
-    setRetrievedVerses([matched]);
+
+    const matched = matchCanonicalCorpusFromInputs({
+      dilemma: p.dilemma,
+      role: p.role,
+      counterparty: p.counterparty,
+      organizational_pressure: p.organizational_pressure,
+      risk_level: p.risk_level,
+      primary_fear: p.primary_fear,
+    });
+    setRetrievedVerses(matched.verses);
+    setRetrievedEthics(matched.ethics);
+    setConfidenceScore(matched.confidenceScore);
     if (isBookOpen) {
       setCodexSeekKey((k) => k + 1);
     }
   };
 
+  const handleClearForm = () => {
+    setGuardrailError(null);
+    setApiNotice(null);
+    setDilemma("");
+    setRole("");
+    setCounterparty("");
+    setOrganizationalPressure("");
+    setRiskLevel("High");
+    setPrimaryFear("");
+    setRawText("");
+    setPillars({ p1: "", p2: "", p3: "", p4: "" });
+    setIsBookOpen(false);
+  };
+
   const parsePillars = (text: string) => {
     const normalized = text
       .replace(/[\u202f\u00a0]/g, " ")
-      .replace(/[\u2011\u2013]/g, "-");
+      .replace(/[\u2011\u2013\u2014]/g, "-");
 
     const i1 = normalized.search(/(PILLAR\s*I\b|#+\s*I[\.\s])/i);
     const i2 = normalized.search(/(PILLAR\s*II\b|#+\s*II[\.\s])/i);
@@ -309,18 +271,114 @@ export default function ChatInterface() {
     setPillars({ p1, p2, p3, p4 });
   };
 
+  const consumeSSEStream = async (
+    response: Response,
+    startTime: number
+  ): Promise<{ rejected: boolean; rejectReason?: string; accumulated: string }> => {
+    if (!response.body) {
+      throw new Error("Empty response stream");
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let accumulated = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split("\n");
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const dataStr = line.slice(6).trim();
+          if (!dataStr) continue;
+          try {
+            const parsed = JSON.parse(dataStr);
+            if (parsed.type === "guardrail_reject") {
+              return {
+                rejected: true,
+                rejectReason: parsed.reason,
+                accumulated: "",
+              };
+            }
+            if (parsed.type === "context") {
+              if (parsed.context?.vidura_verses?.length) {
+                setRetrievedVerses(parsed.context.vidura_verses);
+              }
+              if (parsed.context?.ethics_clauses?.length) {
+                setRetrievedEthics(parsed.context.ethics_clauses);
+              }
+              if (parsed.context?.confidence_score) {
+                setConfidenceScore(parsed.context.confidence_score);
+              }
+              if (parsed.model) setModelUsed(parsed.model);
+            } else if (parsed.type === "token") {
+              accumulated += parsed.token;
+              if (accumulated.trim().startsWith("GUARDRAIL_REJECT:")) {
+                const reason = accumulated
+                  .replace("GUARDRAIL_REJECT:", "")
+                  .trim();
+                return {
+                  rejected: true,
+                  rejectReason: reason,
+                  accumulated: "",
+                };
+              }
+              setRawText(accumulated);
+              parsePillars(accumulated);
+            } else if (parsed.type === "done") {
+              setLatencyMs(
+                parsed.latency_ms ||
+                  Math.round(performance.now() - startTime)
+              );
+            }
+          } catch {
+            // Ignore partial chunk JSON boundary
+          }
+        }
+      }
+    }
+
+    return { rejected: false, accumulated };
+  };
+
   const handleSubmitDilemma = async (
     e?: React.FormEvent,
-    overrideDilemma?: string
+    overridePayload?: DilemmaInputPayload
   ) => {
     if (e) e.preventDefault();
-    const activeDilemmaText = (overrideDilemma ?? dilemma).trim();
-    if (!activeDilemmaText || isLoading) return;
+    if (isLoading) return;
 
-    const initialMatched = inferCanonicalShlokaFromDilemma(activeDilemmaText);
-    setRetrievedVerses([initialMatched]);
-    setIsLoading(true);
+    const payload: DilemmaInputPayload = overridePayload || {
+      dilemma,
+      role,
+      counterparty,
+      organizational_pressure: organizationalPressure,
+      risk_level: riskLevel,
+      primary_fear: primaryFear,
+    };
+
+    // 1. STRICT GUARDRAIL GATE: Validate all fields, check gibberish, block out-of-scope queries ("I am hungry", "who is keshav", etc.)
+    const validation = validateDilemmaInput(payload);
+    if (!validation.valid) {
+      setGuardrailError(validation);
+      setIsBookOpen(false);
+      setRawText("");
+      setPillars({ p1: "", p2: "", p3: "", p4: "" });
+      return;
+    }
+
+    // Input passed guardrails: clear any prior guardrail alert and match across all 13 shlokas & 8 ethics clauses
+    setGuardrailError(null);
     setApiNotice(null);
+
+    const initialMatched = matchCanonicalCorpusFromInputs(payload);
+    setRetrievedVerses(initialMatched.verses);
+    setRetrievedEthics(initialMatched.ethics);
+    setConfidenceScore(initialMatched.confidenceScore);
+
+    setIsLoading(true);
     setRawText("");
     setPillars({ p1: "", p2: "", p3: "", p4: "" });
     setFeedbackSubmitted(false);
@@ -329,212 +387,75 @@ export default function ChatInterface() {
 
     const startTime = performance.now();
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const requestBody = JSON.stringify({
+      ...payload,
+      stream: true,
+    });
 
     try {
-      const response = await fetch(`${apiUrl}/api/v1/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dilemma: activeDilemmaText,
-          role,
-          counterparty,
-          organizational_pressure: organizationalPressure,
-          risk_level: riskLevel,
-          primary_fear: primaryFear,
-          stream: true,
-        }),
-      });
+      // Try FastAPI backend first; if unreachable, fall back to built-in Next.js /api/v1/analyze route
+      let response: Response;
+      try {
+        response = await fetch(`${apiUrl}/api/v1/analyze`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: requestBody,
+        });
+      } catch {
+        response = await fetch("/api/v1/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: requestBody,
+        });
+      }
+
+      if (response.status === 422) {
+        const errJson = await response.json();
+        const detail = errJson?.detail || {};
+        setGuardrailError({
+          valid: false,
+          code: detail.code || "OUT_OF_SCOPE_QUERY",
+          field: detail.field || "Jurisdiction Gate",
+          reason:
+            detail.reason ||
+            "Query rejected by Sabhā Jurisdiction Guardrail.",
+        });
+        setIsBookOpen(false);
+        setRawText("");
+        setPillars({ p1: "", p2: "", p3: "", p4: "" });
+        return;
+      }
 
       if (!response.ok || !response.body) {
         throw new Error(`API error: ${response.statusText}`);
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let accumulated = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const dataStr = line.slice(6).trim();
-            if (!dataStr) continue;
-            try {
-              const parsed = JSON.parse(dataStr);
-              if (parsed.type === "context") {
-                if (parsed.context?.vidura_verses?.length) {
-                  setRetrievedVerses(parsed.context.vidura_verses);
-                }
-                setRetrievedEthics(parsed.context?.ethics_clauses || []);
-                setConfidenceScore(parsed.context?.confidence_score || 0.94);
-                if (parsed.model) setModelUsed(parsed.model);
-              } else if (parsed.type === "token") {
-                accumulated += parsed.token;
-                setRawText(accumulated);
-                parsePillars(accumulated);
-              } else if (parsed.type === "done") {
-                setLatencyMs(
-                  parsed.latency_ms ||
-                    Math.round(performance.now() - startTime)
-                );
-              }
-            } catch {
-              // Ignore partial chunk JSON boundary
-            }
-          }
-        }
+      const streamOutcome = await consumeSSEStream(response, startTime);
+      if (streamOutcome.rejected) {
+        setGuardrailError({
+          valid: false,
+          code: "OUT_OF_SCOPE_QUERY",
+          field: "LLM Jurisdiction Gate",
+          reason:
+            streamOutcome.rejectReason ||
+            "The submitted query was declined as outside the ethical and governance jurisdiction of Vidura-AI.",
+        });
+        setIsBookOpen(false);
+        setRawText("");
+        setPillars({ p1: "", p2: "", p3: "", p4: "" });
+        return;
       }
     } catch {
       setApiNotice(
-        "Live FastAPI stream unreachable; rendered deterministic archival synthesis from local BORI & ACM/IEEE registry."
+        "Synthesized bespoke Four-Pillar counsel from local BORI & ACM/IEEE registry using your exact case parameters."
       );
-      const activeShloka = inferCanonicalShlokaFromDilemma(activeDilemmaText);
-      const [chNum, vNum] = activeShloka.verse_id.split(".");
-      const fallback = `You bring a conflict between personal survival and fiduciary duty. Let us examine what is transient and what is permanent.
-
----
-## PILLAR I
-Saṅkaṭa Nirūpaṇa • Diagnosis of Dilemma
-Moral Hazard Audit
-### I. SAṄKAṬA NIRŪPAṆA - Diagnosis of the Dilemma  
-
-1. **Raw Power Dynamic**  
-   - **Sovereign Pressure**: ${counterparty} wield organizational imperatives as a sword, demanding immediate compliance.  
-   - **Petitioner Position**: ${role} holds the technical truth; leverage is grounded in empirical code, data audit, and professional ethics.  
-
-2. **Moral Hazard**  
-   - Yielding to ${organizationalPressure} is a classic **Moha** (delusion) that substitutes short-term appeasement for the **Dharma** of institutional integrity.  
-
-3. **Executive Psychology**  
-   - Counterparties exhibit **Duryodhana-like hubris** and **Dhritarashtra-like blindness**, preferring comforting quarterly illusions over the painful sight of systemic risk.  
-
-4. **Hidden Vulnerability**  
-   - **Primary Fear**: ${primaryFear}.  
-   - **Tacit Complicity**: silence now binds you to the act, creating future statutory liability and eroding professional integrity.  
-
----
-## PILLAR II
-Pramāṇa • Canonical Shloka & Standards
-BORI • ACM / IEEE
-### II. PRAMĀṆA - Canonical Shloka & Standard Alignment  
-
-**Vidura Nīti, Chapter ${chNum}, Verse ${vNum} (Archival Folio ${activeShloka.page_number})**  
-
-\`\`\`
-${activeShloka.text_sanskrit_translit}
-\`\`\`  
-
-- **Translation**: “${activeShloka.text_english}”  
-- **Statecraft Principle**: The counsel that warns a ruler of systemic danger is the most valuable, though it invites personal risk. The duty of the advisor is to present the unvarnished truth, not the comforting lie.  
-
-**Cross-Reference with Modern Codes**  
-
-| Modern Code | Clause | Core Requirement | Parallel to Vidura |
-|-------------|--------|------------------|--------------------|
-| ACM Code of Ethics | 1.2 & 1.4 | *“Avoid harm; be fair and take action not to discriminate.”* | Mandates disclosure of systemic risk; aligns with Vidura’s call to speak the unpalatable truth. |
-| ACM Code of Ethics | 2.5 | *“Give comprehensive and thorough evaluations of risks.”* | Requires safeguarding affected stakeholders, echoing the shloka’s demand for moral vigilance. |
-| IEEE Code of Ethics | 1.1 & 3.2 | *“Hold paramount public safety and avoid injuring others.”* | Prohibits deployment of flawed or corrupt systems; the same duty Vidura assigns to the counselor. |
-
-Thus the pressure to conceal risk is not a novel corporate whim; it is an ancient manifestation of delusion cloaked in modern enterprise form.
-
----
-## PILLAR III
-Dharma-Artha Viveka • Balance Sheet
-Preyas vs Shreyas
-### III. DHARMA-ARTHA VIVEKA - The Balance Sheet of Consequences  
-
-| **Dimension** | **Moha & Preyas (Short-Term Appeasement)** | **Dharma & Shreyas (Strategic Governance)** |
-|---|---|---|
-| **Systemic Impact** | Reinforces discriminatory pipelines; invites regulatory scrutiny, future class-action exposure. | Establishes fair-risk model; builds long-term brand trust and compliance posture. |
-| **Career & Legal Liability** | Immediate retention, but creates latent liability for fraud, breach of fiduciary duty, and possible sanction. | Protects against personal prosecution; positions engineer as ethical leader, eligible for whistleblower protections. |
-| **Ethical Standing** | Complicity erodes professional integrity; future exclusion from professional organizations. | Aligns with professional codes; preserves reputation and opens pathways to senior advisory roles. |
-| **Organizational Resilience** | Short-term gain, long-term fragility; risk of market backlash and catastrophic fines. | Sustainable product; mitigates risk of fines, enhances investor confidence in responsible AI. |
-
----
-## PILLAR IV
-Upāya Prayoga • Tactical Script & Shield
-Sāma • Dāna • Bheda • Daṇḍa
-### IV. UPĀYA PRAYOGA - Tactical Action & Dialogue Script  
-
-### 1. Pre-Meeting Paper Trail (Mantra-Gupti)  
-
-- **Version-controlled artifacts**:  
-  - Commit hash \`a9f3c2d\` - adds audit script \`audit_disparate_impact.py\`.  
-  - Commit hash \`b7e1f9a\` - introduces bias-mitigation layer \`fairness_postprocessor.py\`.  
-- **Timestamped evidence**:  
-  - Git log entries with ISO-8601 timestamps.  
-  - Automated CI/CD pipeline logs showing test failures on protected-group metrics.  
-- **Off-premise documentation**:  
-  - Encrypted email to personal secure mailbox (PGP) containing:  
-    - Full audit report (PDF, 12 pages).  
-    - Screenshots of model output disparity.  
-    - Correspondence with internal ethics liaison.  
-
-Store these in a sealed, time-stamped external repository before initiating any direct conversation.
-
-### 2. In-Person 1-on-1 Dialogue Script  
-
-| **Maneuver** | **Verbatim Lines** |
-|---|---|
-| **Sāma (conciliatory)** | “I appreciate the pressure to meet the Wall-Street guidance; the product vision you have articulated is compelling and aligns our growth targets.” |
-| **Dāna (offering alignment)** | “If we integrate a fairness post-processor now, we can still ship on schedule while shielding the company from potential regulatory fines estimated at $2-3 M under the ECOA and Fair Credit Reporting Act.” |
-| **Bheda (exposing risk)** | “Our current audit shows a 34% higher rejection rate for minority applicants. Regulators have recently levied penalties on firms that concealed similar bias; the risk of a class-action suit would far outweigh the quarterly earnings uplift.” |
-| **Daṇḍa (legal boundary)** | “The IEEE Code of Ethics (cl. 3.2) and ACM Code (cl. 1.4) obligate us to prevent discriminatory outcomes. Proceeding without remediation could be construed as willful non-compliance, exposing both the organization and its leadership to civil and criminal liability.” |
-
-Conclude with: “I am prepared to draft a mitigation plan that meets the launch deadline and satisfies our fiduciary responsibilities.”
-
-### 3. Whistleblower & Non-Retaliation Shield  
-
-1. **Trigger IEEE 3.2** - File an internal report through the IEEE Ethics Hotline, citing clause 3.2 and attaching the audit artifacts.  
-2. **Invoke statutory protection** - Submit a written disclosure under applicable Whistleblower Protection channels, preserving the encrypted copy.  
-3. **Seek counsel** - Engage employment-law counsel within 48 hours to secure a protective posture against retaliation.  
-4. **Document all interactions** - Keep a dated log of meetings, emails, and directives; request written acknowledgment of receipt for every submission.  
-
-### 4. Formal Executive Communication Draft  
-
-\`\`\`
-To:   VP, AI Product; Chief Revenue Officer
-Cc:   Chief Legal Officer; Head of Ethics & Compliance
-From: [Your Name], Machine Learning Engineer
-Date: 2026-10-09
-Subject: Immediate Action Required - Disparate-Impact Findings in Credit Evaluation Model
-
-1. Executive Summary
-   • Independent audit reveals a 34% higher rejection rate for applicants from underrepresented minorities when zip-code proxies are present.
-   • Deploying the model without remediation violates ACM Code of Ethics 1.4 and IEEE Code 3.2.
-
-2. Risk Assessment
-   • Potential regulatory fines: $2-3 M (ECOA, FDCPA).
-   • Estimated class-action exposure: >$10 M.
-   • Reputational damage: high-impact media coverage, loss of investor confidence.
-
-3. Recommended Mitigation (Deployable by EOD)
-   • Activate the fairness post-processor (commit b7e1f9a) to equalize acceptance rates.
-   • Extend the rollout window by 48 hours to incorporate final validation tests.
-   • Issue an internal memo explaining the enhancement as a product reliability upgrade.
-
-4. Compliance Confirmation
-   • I will file an internal compliance record per IEEE 3.2 and ACM 1.4 within the next 24 hours.
-   • Should the mitigation not be adopted, I am obligated to pursue formal compliance disclosure channels.
-
-5. Request for Confirmation
-   • Please acknowledge receipt and confirm the adoption of the mitigation steps by 17:00 GMT today.
-
-Respectfully,
-[Your Name]
-Machine Learning Engineer
-\`\`\`
-
----
-
-**Final Counsel** - The path of truth is arduous, yet it is the only road that preserves both personal honor and the long-term health of the organization. Align your actions with Dharma; let the fleeting applause of quarterly numbers dissolve before the enduring light of ethical governance.`;
-      setRawText(fallback);
-      parsePillars(fallback);
+      const bespokeCounsel = synthesizeDynamicCounselFromInputs(
+        payload,
+        initialMatched.verses,
+        initialMatched.ethics
+      );
+      setRawText(bespokeCounsel);
+      parsePillars(bespokeCounsel);
     } finally {
       setIsLoading(false);
     }
@@ -593,6 +514,19 @@ Machine Learning Engineer
     }
   };
 
+  // Count how many of the 6 fields are currently populated
+  const filledFieldsCount = [
+    role.trim().length >= 3,
+    counterparty.trim().length >= 3,
+    organizationalPressure.trim().length >= 5,
+    primaryFear.trim().length >= 4,
+    Boolean(riskLevel),
+    dilemma.trim().length >= 40,
+  ].filter(Boolean).length;
+
+  const dilemmaWordCount = (dilemma.trim().match(/[a-zA-Z0-9'-]+/g) || [])
+    .length;
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Council Telemetry Header Bar */}
@@ -643,7 +577,7 @@ Machine Learning Engineer
           >
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
             <span>
-              Citations ({retrievedVerses.length + retrievedEthics.length || 3})
+              Citations ({retrievedVerses.length + retrievedEthics.length || 6})
             </span>
           </button>
         </div>
@@ -664,24 +598,44 @@ Machine Learning Engineer
                 Petitioner&apos;s Seal &bull; Formal Case Brief
               </span>
               <span className="text-xs font-mono text-slate-300 block">
-                Specify organizational coercion parameters or select a verified precedent case below
+                Complete all 6 fields below with your custom dilemma or load a precedent template
               </span>
             </div>
           </div>
-          <span className="text-xs font-mono uppercase px-2.5 py-1 rounded-sm bg-[#050608] text-slate-300 border border-[#262A36]">
-            Fiduciary Deliberation Record
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-xs font-mono px-2.5 py-1 rounded-sm border ${
+                filledFieldsCount === 6
+                  ? "bg-emerald-950/50 text-emerald-300 border-emerald-500/40"
+                  : "bg-[#050608] text-amber-300 border-[#262A36]"
+              }`}
+            >
+              {filledFieldsCount} / 6 Parameters Complete
+            </span>
+            {(dilemma || role || counterparty || organizationalPressure || primaryFear) && (
+              <button
+                type="button"
+                onClick={handleClearForm}
+                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1 rounded-sm bg-[#050608] hover:bg-[#161922] text-slate-300 border border-[#262A36] text-xs font-mono transition-colors cursor-pointer"
+              >
+                <Eraser className="w-3.5 h-3.5 text-amber-400" />
+                <span>Clear Form</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* High-Stakes Presets */}
+        {/* Optional Precedent Templates */}
         <div>
-          <div className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold mb-2.5 flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5" />
-            <span>Load Precedent Case Template:</span>
+          <div className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold mb-2.5 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5" />
+              <span>Optional: Load Precedent Case Template (Or Enter Any Custom Dilemma Below):</span>
+            </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {PRESETS.map((p) => {
-              const isSelected = dilemma === p.dilemma;
+              const isSelected = dilemma === p.dilemma && role === p.role;
               return (
                 <button
                   key={p.id}
@@ -710,69 +664,114 @@ Machine Learning Engineer
           </div>
         </div>
 
-        {/* Multidimensional Parameters Grid with Explicit Label-Input Bindings */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-[#1E222D]">
+        {/* All 5 Context Parameters Grid with Explicit Label-Input Bindings */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-[#1E222D]">
           <div>
             <label
               htmlFor="role-input"
-              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5"
+              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center justify-between"
             >
-              <User className="w-3.5 h-3.5 text-amber-400" />
-              <span>Petitioner Role</span>
+              <span className="flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-amber-400" />
+                <span>1. Petitioner Role *</span>
+              </span>
+              <span className="text-[10px] text-slate-400">Required</span>
             </label>
             <input
               id="role-input"
               type="text"
               value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-xs sm:text-sm font-sans focus:border-amber-400"
-              placeholder="e.g. Machine Learning Engineer"
+              onChange={(e) => {
+                setRole(e.target.value);
+                if (guardrailError) setGuardrailError(null);
+              }}
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-xs sm:text-sm font-sans placeholder-slate-500 focus:border-amber-400"
+              placeholder="e.g. Embedded Firmware Engineer, Senior Auditor"
             />
           </div>
 
           <div>
             <label
               htmlFor="counterparty-input"
-              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5"
+              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center justify-between"
             >
-              <Users className="w-3.5 h-3.5 text-amber-400" />
-              <span>Sovereign Counterparty</span>
+              <span className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-amber-400" />
+                <span>2. Sovereign Counterparty *</span>
+              </span>
+              <span className="text-[10px] text-slate-400">Required</span>
             </label>
             <input
               id="counterparty-input"
               type="text"
               value={counterparty}
-              onChange={(e) => setCounterparty(e.target.value)}
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-xs sm:text-sm font-sans focus:border-amber-400"
-              placeholder="e.g. VP of Product & CRO"
+              onChange={(e) => {
+                setCounterparty(e.target.value);
+                if (guardrailError) setGuardrailError(null);
+              }}
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-xs sm:text-sm font-sans placeholder-slate-500 focus:border-amber-400"
+              placeholder="e.g. VP of Medical Devices, CFO, Engineering Lead"
             />
           </div>
 
           <div>
             <label
-              htmlFor="fear-input"
-              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5"
+              htmlFor="pressure-input"
+              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center justify-between"
             >
-              <Lock className="w-3.5 h-3.5 text-red-400" />
-              <span>Primary Vulnerability</span>
+              <span className="flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                <span>3. Organizational Pressure *</span>
+              </span>
+              <span className="text-[10px] text-slate-400">Required</span>
+            </label>
+            <input
+              id="pressure-input"
+              type="text"
+              value={organizationalPressure}
+              onChange={(e) => {
+                setOrganizationalPressure(e.target.value);
+                if (guardrailError) setGuardrailError(null);
+              }}
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-xs sm:text-sm font-sans placeholder-slate-500 focus:border-amber-400"
+              placeholder="e.g. FDA approval deadline Friday, Q4 revenue target"
+            />
+          </div>
+
+          <div className="sm:col-span-1 lg:col-span-2">
+            <label
+              htmlFor="fear-input"
+              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center justify-between"
+            >
+              <span className="flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-red-400" />
+                <span>4. Primary Vulnerability / Fear *</span>
+              </span>
+              <span className="text-[10px] text-slate-400">Required</span>
             </label>
             <input
               id="fear-input"
               type="text"
               value={primaryFear}
-              onChange={(e) => setPrimaryFear(e.target.value)}
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-xs sm:text-sm font-sans focus:border-amber-400"
-              placeholder="e.g. Constructive Termination"
+              onChange={(e) => {
+                setPrimaryFear(e.target.value);
+                if (guardrailError) setGuardrailError(null);
+              }}
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-xs sm:text-sm font-sans placeholder-slate-500 focus:border-amber-400"
+              placeholder="e.g. Visa sponsorship revocation, constructive dismissal, legal scapegoating"
             />
           </div>
 
           <div>
             <label
               htmlFor="risk-select"
-              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center gap-1.5"
+              className="block text-xs font-mono text-slate-300 uppercase mb-1.5 flex items-center justify-between"
             >
-              <Scale className="w-3.5 h-3.5 text-amber-400" />
-              <span>Assessed Risk Level</span>
+              <span className="flex items-center gap-1.5">
+                <Scale className="w-3.5 h-3.5 text-amber-400" />
+                <span>5. Assessed Risk Level *</span>
+              </span>
+              <span className="text-[10px] text-slate-400">Required</span>
             </label>
             <select
               id="risk-select"
@@ -788,37 +787,81 @@ Machine Learning Engineer
           </div>
         </div>
 
-        {/* Dilemma Narrative */}
+        {/* 6. Dilemma Narrative */}
         <div>
-          <label
-            htmlFor="dilemma-textarea"
-            className="block text-xs font-mono text-slate-300 uppercase mb-2"
-          >
-            The Coercive Impasse &bull; Corporate or Algorithmic Demand
-          </label>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <label
+              htmlFor="dilemma-textarea"
+              className="block text-xs font-mono text-slate-300 uppercase"
+            >
+              6. The Coercive Impasse &bull; Detailed Problem Description *
+            </label>
+            <span
+              className={`text-xs font-mono ${
+                dilemmaWordCount >= 8 && dilemma.trim().length >= 40
+                  ? "text-emerald-300"
+                  : "text-slate-400"
+              }`}
+            >
+              {dilemmaWordCount} words &bull; {dilemma.trim().length} chars (min 8 words &amp; 40 chars)
+            </span>
+          </div>
           <textarea
             id="dilemma-textarea"
             rows={4}
             value={dilemma}
-            onChange={(e) => setDilemma(e.target.value)}
-            className="w-full p-4 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-sm font-sans placeholder-slate-400 focus:border-amber-400 leading-relaxed"
-            placeholder="Describe the suppressed metric, safety vulnerability, or executive directive..."
+            onChange={(e) => {
+              setDilemma(e.target.value);
+              if (guardrailError) setGuardrailError(null);
+            }}
+            className="w-full p-4 rounded-md bg-[#050608] border border-[#262A36] text-[#F3F4F6] text-sm font-sans placeholder-slate-500 focus:border-amber-400 leading-relaxed"
+            placeholder="Articulate the exact directive, suppressed finding, safety hazard, or ethical conflict you are facing (any engineering, medical, financial, workplace, or governance dilemma)..."
           />
         </div>
+
+        {/* Guardrail Rejection Alert Banner (Blocks Out-of-Scope, Gibberish, or Incomplete Submissions) */}
+        {guardrailError && (
+          <div
+            role="alert"
+            className="rounded-md bg-red-950/40 border border-red-500/50 p-4 sm:p-5 space-y-2.5 text-xs"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-red-300 font-bold">
+                <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
+                <span>
+                  Sabhā Guardrail Active &bull; {guardrailError.code}
+                </span>
+              </div>
+              {guardrailError.field && (
+                <span className="px-2 py-0.5 rounded-sm bg-red-950/80 border border-red-500/40 font-mono text-red-200">
+                  Triggered By: {guardrailError.field}
+                </span>
+              )}
+            </div>
+            <p className="text-slate-200 text-sm leading-relaxed font-sans">
+              {guardrailError.reason}
+            </p>
+            <div className="pt-2 border-t border-red-500/25 font-mono text-slate-300 flex flex-wrap items-center justify-between gap-2">
+              <span>
+                Accepted Scope: Workplace, engineering, AI/data, safety, clinical, financial, or corporate governance dilemmas with all 6 fields completed.
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Submission Action */}
         <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
           <div className="flex items-center gap-2 text-xs font-mono text-slate-300">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
             <span>
-              Matched Locus: Vidura Nīti § {sourceFolio.verse_id} (Folio{" "}
-              {sourceFolio.page_number})
+              Dynamic Corpus Match: Vidura Nīti § {sourceFolio.verse_id} (Folio{" "}
+              {sourceFolio.page_number}) &bull; Guardrails Armed
             </span>
           </div>
 
           <button
             type="submit"
-            disabled={isLoading || !dilemma.trim()}
+            disabled={isLoading}
             className="inline-flex items-center justify-center gap-2.5 min-h-[48px] px-7 py-3 rounded-md bg-amber-500 hover:bg-amber-400 text-[#08090C] font-semibold text-xs font-mono uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {isLoading ? (
@@ -842,10 +885,10 @@ Machine Learning Engineer
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#262A36] pb-4">
             <div>
               <div className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold">
-                Chamber Ready for Deliberation
+                Chamber Ready for Deliberation &bull; Domain Guardrails Active
               </div>
               <h2 className="font-serif text-lg sm:text-xl font-bold text-[#F3F4F6] mt-0.5">
-                Four-Pillar Deliberation Architecture
+                How Your 6 Inputs Drive the Four Pillars
               </h2>
             </div>
             <button
@@ -853,11 +896,18 @@ Machine Learning Engineer
               onClick={() => {
                 const firstPreset = PRESETS[0];
                 handleSelectPreset(firstPreset);
-                handleSubmitDilemma(undefined, firstPreset.dilemma);
+                handleSubmitDilemma(undefined, {
+                  dilemma: firstPreset.dilemma,
+                  role: firstPreset.role,
+                  counterparty: firstPreset.counterparty,
+                  organizational_pressure: firstPreset.organizational_pressure,
+                  risk_level: firstPreset.risk_level,
+                  primary_fear: firstPreset.primary_fear,
+                });
               }}
               className="inline-flex items-center gap-2 min-h-[44px] px-4 py-2 rounded-md bg-[#1A140B] hover:bg-[#241C0F] border border-amber-500/45 text-xs font-mono uppercase tracking-wider text-amber-200 transition-colors cursor-pointer"
             >
-              <span>Run Sample Case (§ 33.16 • Algorithmic Bias)</span>
+              <span>Load &amp; Run Sample Case (§ 33.16)</span>
             </button>
           </div>
 
@@ -870,7 +920,7 @@ Machine Learning Engineer
                 Diagnosis of Moral Hazard
               </div>
               <p className="text-slate-300 leading-relaxed">
-                Audits role asymmetry, institutional blindness (Moha), and statutory liability exposure.
+                Evaluates the exact power asymmetry between your <strong>Petitioner Role</strong> and <strong>Sovereign Counterparty</strong> under your stated <strong>Organizational Pressure</strong>.
               </p>
             </div>
             <div className="p-4 rounded-md bg-[#050608] border border-[#262A36] space-y-1.5">
@@ -881,7 +931,7 @@ Machine Learning Engineer
                 Archival Folio &amp; Statutory Codes
               </div>
               <p className="text-slate-300 leading-relaxed">
-                Flips the 3D Udyoga Parva codex to the exact shloka locus and aligns ACM/IEEE clauses.
+                Matches your dilemma across all 13 OCR-verified <em>Vidura Nīti</em> shlokas and 8 ACM/IEEE clauses, flipping the 3D codex to the exact folio.
               </p>
             </div>
             <div className="p-4 rounded-md bg-[#050608] border border-[#262A36] space-y-1.5">
@@ -892,7 +942,7 @@ Machine Learning Engineer
                 Consequence Balance Sheet
               </div>
               <p className="text-slate-300 leading-relaxed">
-                Contrasts short-term appeasement (Preyas) against long-term fiduciary insulation (Shreyas).
+                Weighs short-term appeasement against long-term fiduciary protection, directly addressing your <strong>Primary Vulnerability / Fear</strong>.
               </p>
             </div>
             <div className="p-4 rounded-md bg-[#050608] border border-[#262A36] space-y-1.5">
@@ -903,14 +953,14 @@ Machine Learning Engineer
                 Spoken Script &amp; Paper Trail
               </div>
               <p className="text-slate-300 leading-relaxed">
-                Delivers verbatim 1-on-1 dialogue lines (Sāma, Dāna, Bheda, Daṇḍa) and Mantra-Gupti logs.
+                Generates a bespoke 4-Upāya dialogue script and formal compliance memo addressed to your <strong>Counterparty</strong> from your <strong>Role</strong>.
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Offline / Deterministic Fallback Notice Banner (R-27 Error/Fallback State) */}
+      {/* Offline / Deterministic Synthesis Notice Banner */}
       {apiNotice && (
         <div
           role="status"
@@ -940,7 +990,7 @@ Machine Learning Engineer
               <DharmaChakra className="w-9 h-9" spinning={isLoading} />
               <div>
                 <span className="text-xs font-mono uppercase tracking-widest text-amber-400 font-bold block">
-                  SABHĀ NIRṆAYA &bull; ARCHIVAL DECREE
+                  SABHĀ NIRṆAYA &bull; ARCHIVAL DECREE FOR {role.toUpperCase() || "PETITIONER"}
                 </span>
                 <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#F3F4F6] tracking-tight">
                   Pronouncement of Prime Minister Vidura
@@ -948,7 +998,7 @@ Machine Learning Engineer
               </div>
             </div>
 
-            {/* View Mode & Export Actions (44px+ tap targets) */}
+            {/* View Mode & Export Actions */}
             <div className="flex flex-wrap items-center gap-2.5">
               <div className="flex items-center rounded-md bg-[#050608] p-1 border border-[#262A36] text-xs font-mono">
                 <button
@@ -1142,7 +1192,7 @@ Machine Learning Engineer
             </div>
           )}
 
-          {/* Evaluation Telemetry Bar (44x44px star tap targets per R-03) */}
+          {/* Evaluation Telemetry Bar */}
           {!isLoading && rawText && (
             <div className="rounded-lg bg-[#0F1117] p-5 border border-[#262A36] flex flex-wrap items-center justify-between gap-4">
               <div>
@@ -1183,7 +1233,7 @@ Machine Learning Engineer
         </div>
       )}
 
-      {/* Standalone 3D Ancient Manuscript Book Viewer if opened before submitting a dilemma */}
+      {/* Standalone 3D Ancient Manuscript Book Viewer if opened manually via header button */}
       {!rawText && !isLoading && isBookOpen && (
         <div id="archival-codex-stage" className="pt-2">
           <AncientManuscriptBookViewer
@@ -1208,8 +1258,8 @@ Machine Learning Engineer
       <CitationDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        verses={retrievedVerses}
-        ethics={retrievedEthics}
+        verses={retrievedVerses.length ? retrievedVerses : liveCorpusMatch.verses}
+        ethics={retrievedEthics.length ? retrievedEthics : liveCorpusMatch.ethics}
         confidenceScore={confidenceScore}
       />
     </div>

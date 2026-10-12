@@ -15,6 +15,8 @@ def sanitize_counsel_token(token: str) -> str:
     """
     # Remove surrogate pairs or unprintable control codes except newlines and tabs
     clean = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', token)
+    # Enforce R-02: replace any LLM-generated em dashes with clean hyphen/colon spacing
+    clean = clean.replace("\u2014", " - ")
     return clean
 
 def format_clean_counsel_text(text: str) -> str:
@@ -24,7 +26,7 @@ def format_clean_counsel_text(text: str) -> str:
     - Fixes inconsistent bullet points and indentation
     - Removes raw markdown code-fences wrapping the whole response if any
     """
-    cleaned = text.strip()
+    cleaned = text.strip().replace("\u2014", " - ")
     
     # Strip accidental outer ```markdown ... ``` wrapper if present
     if cleaned.startswith("```markdown"):
@@ -48,7 +50,7 @@ class GroqService:
     def __init__(self):
         self.client = Groq(api_key=settings.GROQ_API_KEY)
         self.primary_model = settings.GROQ_MODEL or "openai/gpt-oss-120b"
-        self.fallback_models = ["openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
+        self.fallback_models = ["openai/gpt-oss-20b", "llama-3.3-70b-versatile"]
 
     def stream_completion(
         self, 
