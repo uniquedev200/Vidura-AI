@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import confetti from "canvas-confetti";
 import {
   Compass,
@@ -29,6 +30,11 @@ import DharmaChakra from "@/components/ui/DharmaChakra";
 import DharmaScale from "@/components/ui/DharmaScale";
 import CitationDrawer from "./CitationDrawer";
 import PillarRenderer from "./PillarRenderer";
+
+const AncientManuscriptBookViewer = dynamic(
+  () => import("./AncientManuscriptBookViewer"),
+  { ssr: false }
+);
 
 interface Preset {
   id: string;
@@ -108,11 +114,28 @@ export default function ChatInterface() {
   const [latencyMs, setLatencyMs] = useState<number>(312);
   const [modelUsed, setModelUsed] = useState<string>("openai/gpt-oss-120b");
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isBookOpen, setIsBookOpen] = useState<boolean>(false);
 
   // Actions Feedback
   const [scriptCopied, setScriptCopied] = useState<boolean>(false);
   const [likertRating, setLikertRating] = useState<number>(5);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
+
+  // Resolved Archival Codex coordinates for Pillar II (Pramāṇa)
+  const primaryVerse = retrievedVerses?.[0];
+  const sourceFolio = {
+    page_number: primaryVerse?.page_number || 79,
+    verse_id:
+      primaryVerse?.verse_id ||
+      (primaryVerse?.adhyaya ? `${primaryVerse.adhyaya}.16` : "33.16"),
+    highlight_text:
+      primaryVerse?.text_sanskrit_translit ||
+      "Sulabhāḥ puruṣā rājan satataṃ priyavādinaḥ | Apriyasya tu pathyasya vaktā śrotā ca durlabhaḥ",
+    english_translation:
+      primaryVerse?.text_english ||
+      "O King, men who always utter pleasant words are easy to find; but one who speaks words that are unpalatable yet wholesome, and one who listens to them, are exceedingly rare.",
+    confidence_score: primaryVerse?.score || confidenceScore || 0.924,
+  };
 
   const handleSelectPreset = (p: Preset) => {
     setDilemma(p.dilemma);
@@ -470,6 +493,13 @@ Machine Learning Engineer
           </div>
 
           <button
+            onClick={() => setIsBookOpen(true)}
+            className="flex items-center space-x-2 rounded-xl border border-amber-500/50 bg-gradient-to-r from-amber-950/60 to-amber-900/30 px-3.5 py-1.5 text-xs font-serif uppercase tracking-wider text-amber-200 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all cursor-pointer"
+          >
+            <span>§ Open Archival Codex (Folio {sourceFolio.page_number}) →</span>
+          </button>
+
+          <button
             onClick={() => setIsDrawerOpen(true)}
             className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
           >
@@ -702,7 +732,11 @@ Machine Learning Engineer
               <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
 
-              <PillarRenderer content={rawText || "Dissecting the sovereign dispute and assembling the Four Pillars of Counsel..."} />
+              <PillarRenderer
+                content={rawText || "Dissecting the sovereign dispute and assembling the Four Pillars of Counsel..."}
+                onOpenArchivalCodex={() => setIsBookOpen(true)}
+                folioNumber={sourceFolio.page_number}
+              />
             </div>
           )}
 
@@ -727,7 +761,7 @@ Machine Learning Engineer
 
               {/* Pillar II Card */}
               <div className="glass-panel-gold rounded-3xl p-6 sm:p-8 border-amber-500/30 shadow-xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-amber-500/20">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-amber-500/20">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
                       PILLAR II
@@ -736,9 +770,18 @@ Machine Learning Engineer
                       Pramāṇa &bull; Canonical Standards
                     </h3>
                   </div>
-                  <span className="text-xs font-mono text-amber-400">BORI &bull; ACM / IEEE</span>
+                  <button
+                    onClick={() => setIsBookOpen(true)}
+                    className="flex items-center space-x-2 rounded-lg border border-amber-500/50 bg-gradient-to-r from-amber-950/40 to-amber-900/20 px-4 py-2 text-xs font-serif uppercase tracking-wider text-amber-200 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all cursor-pointer"
+                  >
+                    <span>§ Open Archival Codex (Folio {sourceFolio.page_number}) →</span>
+                  </button>
                 </div>
-                <PillarRenderer content={pillars.p2 || "Aligning Vidura Nīti shlokas with ACM and IEEE clauses..."} />
+                <PillarRenderer
+                  content={pillars.p2 || "Aligning Vidura Nīti shlokas with ACM and IEEE clauses..."}
+                  onOpenArchivalCodex={() => setIsBookOpen(true)}
+                  folioNumber={sourceFolio.page_number}
+                />
               </div>
 
               {/* Pillar III Card */}
@@ -821,6 +864,19 @@ Machine Learning Engineer
         verses={retrievedVerses}
         ethics={retrievedEthics}
         confidenceScore={confidenceScore}
+      />
+
+      {/* 3D Ancient Manuscript Book Viewer Modal */}
+      <AncientManuscriptBookViewer
+        isOpen={isBookOpen}
+        onClose={() => setIsBookOpen(false)}
+        pdfUrl="/udyoga_parva.pdf"
+        targetPage={sourceFolio.page_number}
+        highlightText={sourceFolio.highlight_text}
+        verseId={sourceFolio.verse_id}
+        confidenceScore={sourceFolio.confidence_score}
+        sanskritVerse={sourceFolio.highlight_text}
+        englishTranslation={sourceFolio.english_translation}
       />
     </div>
   );

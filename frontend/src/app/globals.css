@@ -79,3 +79,25 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(212, 175, 55, 0.5);
 }
+
+/* Antique Manuscript Vellum & Carbon Ink Filter */
+.parchment-ink-filter canvas {
+  mix-blend-mode: multiply;
+  filter: sepia(0.50) brightness(0.95) contrast(1.25);
+  border-radius: 2px;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* Folio text selection & illumination glow */
+mark.manuscript-glow {
+  background-color: rgba(201, 151, 56, 0.35);
+  color: #2c1d07;
+  border-bottom: 2px solid #a87424;
+  box-shadow: 0 0 12px rgba(201, 151, 56, 0.5);
+  border-radius: 2px;
+  padding: 1px 3px;
+}
+

@@ -7,9 +7,15 @@ import { Copy, Check, Terminal, Scroll, Scale, Shield, AlertTriangle } from "luc
 
 interface PillarRendererProps {
   content: string;
+  onOpenArchivalCodex?: () => void;
+  folioNumber?: number;
 }
 
-export default function PillarRenderer({ content }: PillarRendererProps) {
+export default function PillarRenderer({
+  content,
+  onOpenArchivalCodex,
+  folioNumber = 79,
+}: PillarRendererProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   const handleCopyCode = (codeText: string, idx: number) => {
@@ -30,27 +36,65 @@ export default function PillarRenderer({ content }: PillarRendererProps) {
           ),
           h2: ({ children }) => {
             const headingStr = String(children);
-            const isPillar = headingStr.includes("PILLAR") || headingStr.includes("I.") || headingStr.includes("II.") || headingStr.includes("III.") || headingStr.includes("IV.");
+            const isPillar =
+              headingStr.includes("PILLAR") ||
+              headingStr.includes("I.") ||
+              headingStr.includes("II.") ||
+              headingStr.includes("III.") ||
+              headingStr.includes("IV.");
+            const isPillarTwo =
+              headingStr.includes("II.") ||
+              headingStr.toUpperCase().includes("PRAMĀṆA") ||
+              headingStr.toUpperCase().includes("PRAMANA");
             return (
-              <div className="mt-8 mb-4 pt-4 border-t border-amber-500/20">
-                {isPillar && (
-                  <div className="text-[11px] font-mono uppercase tracking-widest text-amber-400 font-bold mb-1 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    <span>IMPERIAL SŪTRA DELIBERATION</span>
-                  </div>
+              <div className="mt-8 mb-4 pt-4 border-t border-amber-500/20 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  {isPillar && (
+                    <div className="text-[11px] font-mono uppercase tracking-widest text-amber-400 font-bold mb-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                      <span>IMPERIAL SŪTRA DELIBERATION</span>
+                    </div>
+                  )}
+                  <h2 className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-amber-200 flex items-center gap-2">
+                    {children}
+                  </h2>
+                </div>
+                {isPillarTwo && onOpenArchivalCodex && (
+                  <button
+                    type="button"
+                    onClick={onOpenArchivalCodex}
+                    className="flex items-center space-x-2 rounded-lg border border-amber-500/50 bg-gradient-to-r from-amber-950/40 to-amber-900/20 px-4 py-2 text-xs font-serif uppercase tracking-wider text-amber-200 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all cursor-pointer"
+                  >
+                    <span>§ Open Archival Codex (Folio {folioNumber}) →</span>
+                  </button>
                 )}
-                <h2 className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-amber-200 flex items-center gap-2">
-                  {children}
-                </h2>
               </div>
             );
           },
-          h3: ({ children }) => (
-            <h3 className="font-serif text-lg font-semibold text-white mt-6 mb-3 flex items-center gap-2">
-              <span className="text-amber-400 font-mono text-xs">§</span>
-              <span>{children}</span>
-            </h3>
-          ),
+          h3: ({ children }) => {
+            const headingStr = String(children);
+            const isPillarTwo =
+              headingStr.includes("II.") ||
+              headingStr.toUpperCase().includes("PRAMĀṆA") ||
+              headingStr.toUpperCase().includes("PRAMANA");
+            return (
+              <div className="mt-6 mb-3 flex flex-wrap items-center justify-between gap-3">
+                <h3 className="font-serif text-lg font-semibold text-white flex items-center gap-2">
+                  <span className="text-amber-400 font-mono text-xs">§</span>
+                  <span>{children}</span>
+                </h3>
+                {isPillarTwo && onOpenArchivalCodex && (
+                  <button
+                    type="button"
+                    onClick={onOpenArchivalCodex}
+                    className="flex items-center space-x-2 rounded-lg border border-amber-500/50 bg-gradient-to-r from-amber-950/40 to-amber-900/20 px-4 py-2 text-xs font-serif uppercase tracking-wider text-amber-200 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all cursor-pointer"
+                  >
+                    <span>§ Open Archival Codex (Folio {folioNumber}) →</span>
+                  </button>
+                )}
+              </div>
+            );
+          },
           h4: ({ children }) => (
             <h4 className="font-mono text-xs uppercase tracking-wider text-amber-300 font-semibold mt-4 mb-2">
               {children}

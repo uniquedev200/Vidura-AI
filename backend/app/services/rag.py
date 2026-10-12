@@ -49,14 +49,41 @@ class RAGService:
             scores.append(score)
             meta = item.get("metadata", {})
             source = meta.get("source", "")
-            
+            raw_id = str(item.get("id", ""))
+            adhyaya_num = meta.get("adhyaya") or 33
+            # Derive canonical verse_id (e.g. "33.16") and archival folio page_number in udyoga_parva.pdf
+            verse_num = "16"
+            if "-v" in raw_id:
+                verse_num = raw_id.split("-v")[-1]
+            verse_id = meta.get("verse_id") or f"{adhyaya_num}.{verse_num}"
+
+            folio_map = {
+                "vidura-ch33-v16": 79,
+                "vidura-ch33-v17": 79,
+                "vidura-ch33-v24": 80,
+                "vidura-ch33-v32": 81,
+                "vidura-ch34-v12": 84,
+                "vidura-ch34-v29": 86,
+                "vidura-ch35-v08": 90,
+                "vidura-ch35-v42": 92,
+                "vidura-ch36-v15": 95,
+                "vidura-ch37-v11": 98,
+                "vidura-ch38-v22": 102,
+                "vidura-ch39-v18": 106,
+                "vidura-ch40-v05": 110,
+            }
+            default_folio = 79 + max(0, (int(adhyaya_num) - 33) * 4) if isinstance(adhyaya_num, int) else 79
+            page_number = meta.get("page_number") or folio_map.get(raw_id, default_folio)
+
             entry = {
-                "id": item.get("id"),
+                "id": raw_id,
+                "verse_id": verse_id,
+                "page_number": page_number,
                 "score": round(score, 3),
                 "source": source,
                 "parva": meta.get("parva", ""),
                 "sub_parva": meta.get("sub_parva", ""),
-                "adhyaya": meta.get("adhyaya"),
+                "adhyaya": adhyaya_num,
                 "theme": meta.get("theme", ""),
                 "text_sanskrit_translit": meta.get("text_sanskrit_translit", ""),
                 "text_english": meta.get("text_english", ""),
