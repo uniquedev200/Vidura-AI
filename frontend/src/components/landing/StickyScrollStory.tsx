@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertTriangle,
@@ -66,6 +66,83 @@ const STEPS: StoryStep[] = [
 
 export default function StickyScrollStory() {
   const [activeStep, setActiveStep] = useState<number>(1);
+  const stepRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const isManualScrollRef = useRef<boolean>(false);
+  const manualScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const selectAndScrollToStage = useCallback((stepId: number) => {
+    setActiveStep(stepId);
+    const targetEl = stepRefs.current[stepId - 1];
+    if (!targetEl || typeof window === "undefined") return;
+
+    isManualScrollRef.current = true;
+    if (manualScrollTimeoutRef.current) {
+      clearTimeout(manualScrollTimeoutRef.current);
+    }
+
+    const rect = targetEl.getBoundingClientRect();
+    const stickyTopOffset = 128;
+    const targetScrollY = window.scrollY + rect.top - stickyTopOffset;
+
+    window.scrollTo({
+      top: Math.max(0, targetScrollY),
+      behavior: "smooth",
+    });
+
+    manualScrollTimeoutRef.current = setTimeout(() => {
+      isManualScrollRef.current = false;
+    }, 650);
+  }, []);
+
+  useEffect(() => {
+    let rafId: number | null = null;
+
+    const updateActiveStepOnScroll = () => {
+      if (isManualScrollRef.current) return;
+
+      const viewportTriggerY = window.innerHeight * 0.42;
+      let closestStepId = 1;
+      let minDistance = Number.POSITIVE_INFINITY;
+
+      STEPS.forEach((step, idx) => {
+        const el = stepRefs.current[idx];
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const cardCenterY = rect.top + rect.height / 2;
+        const distance = Math.abs(cardCenterY - viewportTriggerY);
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestStepId = step.id;
+        }
+      });
+
+      setActiveStep((prev) => (prev !== closestStepId ? closestStepId : prev));
+    };
+
+    const onScroll = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        updateActiveStepOnScroll();
+        rafId = null;
+      });
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    updateActiveStepOnScroll();
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+      if (manualScrollTimeoutRef.current) {
+        clearTimeout(manualScrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <section className="relative py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-[#262A36]">
@@ -81,25 +158,28 @@ export default function StickyScrollStory() {
           <span className="text-[#E5C158]">Enterprise Governance</span>
         </h2>
         <p className="mt-3 text-base text-slate-300 leading-relaxed">
-          Inspect how a high-stakes engineering compliance dispute progresses through archival retrieval and tactical script synthesis.
+          Scroll through the four deliberation stages on the left to inspect how the Sabhā Verification Ledger resolves coercive engineering mandates on the right.
         </p>
       </div>
 
       {/* 5:7 Asymmetric Interactive Case Ledger */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column (5 Cols): Interactive Stage Selector */}
-        <div className="lg:col-span-5 space-y-4">
-          {STEPS.map((step) => {
+        {/* Left Column (5 Cols): Scroll-Tracked Stage Cards */}
+        <div className="lg:col-span-5 space-y-8 lg:space-y-24 lg:pb-32">
+          {STEPS.map((step, index) => {
             const isActive = activeStep === step.id;
             return (
               <button
                 key={step.id}
+                ref={(el) => {
+                  stepRefs.current[index] = el;
+                }}
                 type="button"
-                onClick={() => setActiveStep(step.id)}
-                className={`w-full text-left rounded-lg p-6 transition-colors cursor-pointer border ${
+                onClick={() => selectAndScrollToStage(step.id)}
+                className={`w-full text-left rounded-lg p-6 sm:p-7 transition-all duration-200 cursor-pointer border ${
                   isActive
-                    ? "bg-[#12151E] border-amber-500/50"
-                    : "bg-[#0B0D13] border-[#1E222D] hover:border-amber-500/30 hover:bg-[#0F1117]"
+                    ? "bg-[#12151E] border-amber-500/60 shadow-[0_8px_28px_rgba(0,0,0,0.5)]"
+                    : "bg-[#0B0D13] border-[#1E222D] opacity-75 hover:opacity-100 hover:border-amber-500/30 hover:bg-[#0F1117]"
                 }`}
               >
                 <div className="flex items-center justify-between mb-2.5">
@@ -137,7 +217,7 @@ export default function StickyScrollStory() {
                 <div className="mt-4 pt-3 border-t border-[#1E222D] flex items-center justify-between text-xs font-mono text-slate-400">
                   <span>{step.meta}</span>
                   <span className={isActive ? "text-amber-400 font-semibold" : "text-slate-400"}>
-                    {isActive ? "Active Stage" : "Select Stage"}
+                    {isActive ? "Active in Sabhā Ledger" : "Scroll or Click"}
                   </span>
                 </div>
               </button>
@@ -146,19 +226,27 @@ export default function StickyScrollStory() {
         </div>
 
         {/* Right Column (7 Cols): Sticky Deliberation Viewport */}
-        <div className="lg:col-span-7 lg:sticky lg:top-28">
+        <div className="lg:col-span-7 lg:sticky lg:top-28 self-start">
           <div className="rounded-lg bg-[#0F1117] border border-[#262A36] p-6 sm:p-8 min-h-[520px] flex flex-col justify-between shadow-[0_12px_36px_rgba(0,0,0,0.55)]">
-            {/* Viewport Top Telemetry Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-[#262A36] text-xs font-mono text-slate-300">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-[#F3F4F6] font-semibold tracking-wide">
-                  DELIBERATION STAGE 0{activeStep}
-                </span>
+            {/* Viewport Top Telemetry Header + Stage Progress Bar */}
+            <div className="space-y-3 pb-4 border-b border-[#262A36]">
+              <div className="flex items-center justify-between text-xs font-mono text-slate-300">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="text-[#F3F4F6] font-semibold tracking-wide">
+                    DELIBERATION STAGE 0{activeStep} // {STEPS[activeStep - 1]?.badge.split(": ")[1]}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-400">
+                  <Cpu className="w-3.5 h-3.5 text-amber-400" />
+                  <span>SABHĀ VERIFICATION LEDGER</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-slate-400">
-                <Cpu className="w-3.5 h-3.5 text-amber-400" />
-                <span>SABHĀ VERIFICATION LEDGER</span>
+              <div className="w-full h-1 bg-[#161922] rounded-sm overflow-hidden">
+                <div
+                  className="h-full bg-amber-500 transition-all duration-300"
+                  style={{ width: `${(activeStep / STEPS.length) * 100}%` }}
+                />
               </div>
             </div>
 
@@ -396,7 +484,7 @@ export default function StickyScrollStory() {
                   <button
                     key={i}
                     type="button"
-                    onClick={() => setActiveStep(i)}
+                    onClick={() => selectAndScrollToStage(i)}
                     aria-label={`Select deliberation stage ${i}`}
                     aria-pressed={activeStep === i}
                     className={`min-h-[44px] min-w-[44px] px-3 rounded-md font-mono text-xs font-semibold transition-colors cursor-pointer border ${

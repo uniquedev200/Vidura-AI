@@ -9,11 +9,12 @@
     --gold-accent: #F59E0B;
   }
 
+  html,
   body {
     background-color: #08090C;
     color: #F3F4F6;
     font-family: var(--font-sans), system-ui, sans-serif;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   h1, h2, h3, .font-serif {
